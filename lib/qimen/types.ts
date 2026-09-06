@@ -77,8 +77,9 @@ export interface QimenChart {
 export interface Pattern {
   name: string;                  // 格局名称（如"龙遁"）
   type: '吉格' | '凶格';         // 吉凶分类
-  palace: PalaceIndex;           // 出现在哪个宫位
+  palace?: PalaceIndex;          // 出现在哪个宫位（全盘性格局为 undefined）
   description: string;           // 格局说明
+  tags: string[];                // 关联标签（用于古籍联动）
 }
 
 // ─── 十干克应 ────────────────────────────────────────────────────────────────
