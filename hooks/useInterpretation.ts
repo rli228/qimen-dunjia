@@ -2,8 +2,14 @@
 
 import { useState, useRef, useCallback } from 'react';
 import type { QimenChart } from '@/lib/qimen/types';
-import { interpretChart, type InterpretationResult } from '@/lib/qimen/interpretation/index';
-import { buildSystemPrompt, buildUserMessage, type EventType } from '@/lib/ai/buildPrompt';
+import { interpretChart } from '@/lib/qimen/interpretation/index';
+import {
+  buildSystemPrompt, buildUserMessage,
+  buildCompactSystemPrompt, buildCompactUserMessage,
+  type EventType,
+} from '@/lib/ai/buildPrompt';
+
+export type AiProvider = 'gemini' | 'anthropic';
 
 export interface AiInterpretationState {
   status: 'idle' | 'streaming' | 'done' | 'error';
@@ -11,7 +17,7 @@ export interface AiInterpretationState {
   error: string | null;
 }
 
-export function useAiInterpretation(chart: QimenChart | null, apiKey: string) {
+export function useAiInterpretation(chart: QimenChart | null, token: string, provider: AiProvider) {
   const [state, setState] = useState<AiInterpretationState>({
     status: 'idle',
     text: '',
@@ -21,7 +27,7 @@ export function useAiInterpretation(chart: QimenChart | null, apiKey: string) {
   const abortRef = useRef<AbortController | null>(null);
 
   const start = useCallback(async (options: { question?: string; eventType?: EventType } = {}) => {
-    if (!chart || !apiKey) return;
+    if (!chart || !token) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -34,19 +40,30 @@ export function useAiInterpretation(chart: QimenChart | null, apiKey: string) {
       const systemPrompt = buildSystemPrompt(beginnerMode);
       const userMessage = buildUserMessage(chart, interpretation, options);
 
-      const response = await fetch('/api/interpret', {
+      const endpoint = provider === 'anthropic' ? '/api/interpret' : '/api/interpret-hf';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (provider === 'anthropic') {
+        headers['x-api-key'] = token;
+      } else {
+        headers['x-gemini-key'] = token;
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
+        headers,
         body: JSON.stringify({ systemPrompt, userMessage, beginnerMode }),
         signal: controller.signal,
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        setState({ status: 'error', text: '', error: err.error || '请求失败' });
+        let errorMsg = '请求失败';
+        try {
+          const err = await response.json();
+          errorMsg = err.error || errorMsg;
+        } catch {
+          errorMsg = `请求失败 (${response.status})`;
+        }
+        setState({ status: 'error', text: '', error: errorMsg });
         return;
       }
 
@@ -66,9 +83,8 @@ export function useAiInterpretation(chart: QimenChart | null, apiKey: string) {
 
         buffer += decoder.decode(value, { stream: true });
 
-        // Parse SSE events (handle both \n\n and \r\n\r\n delimiters)
         const events = buffer.split(/\r?\n\r?\n/);
-        buffer = events.pop() || ''; // Keep incomplete event in buffer
+        buffer = events.pop() || '';
 
         for (const event of events) {
           for (const line of event.split(/\r?\n/)) {
@@ -78,8 +94,21 @@ export function useAiInterpretation(chart: QimenChart | null, apiKey: string) {
 
             try {
               const parsed = JSON.parse(data);
-              if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-                accumulated += parsed.delta.text;
+              let text = '';
+              if (provider === 'anthropic') {
+                // Anthropic format: content_block_delta
+                if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                  text = parsed.delta.text;
+                }
+              } else {
+                // Gemini format: candidates[0].content.parts[0].text
+                const part = parsed.candidates?.[0]?.content?.parts?.[0];
+                if (part?.text) {
+                  text = part.text;
+                }
+              }
+              if (text) {
+                accumulated += text;
                 setState(prev => ({ ...prev, text: accumulated }));
               }
             } catch {
@@ -98,7 +127,7 @@ export function useAiInterpretation(chart: QimenChart | null, apiKey: string) {
         error: err instanceof Error ? err.message : '未知错误',
       });
     }
-  }, [chart, apiKey, beginnerMode]);
+  }, [chart, token, provider, beginnerMode]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();

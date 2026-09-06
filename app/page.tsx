@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { NinePalaceGrid } from '@/components/QimenBoard/NinePalaceGrid';
 import { InterpretationPanel } from '@/components/Interpretation/InterpretationPanel';
+import { RuleInterpretation } from '@/components/Interpretation/RuleInterpretation';
 import { AiPanel } from '@/components/Interpretation/AiPanel';
 import { QuestionInput } from '@/components/InputForm/QuestionInput';
 import { ChartForm } from '@/components/InputForm/ChartForm';
@@ -102,6 +103,7 @@ export default function HomePage() {
             <NinePalaceGrid chart={chart} />
           </div>
           <div className="mx-auto max-w-2xl space-y-6">
+            <RuleInterpretation chart={chart} question={question} />
             <InterpretationPanel chart={chart} />
             <AiPanel chart={chart} question={question} />
           </div>

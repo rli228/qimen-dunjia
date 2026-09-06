@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import type { QimenChart } from '@/lib/qimen/types';
 import { useApiKey } from '@/hooks/useApiKey';
-import { useAiInterpretation } from '@/hooks/useInterpretation';
-import { ApiKeyInput } from './ApiKeyInput';
+import { useAiInterpretation, type AiProvider } from '@/hooks/useInterpretation';
 import { EventTypeSelector } from './EventTypeSelector';
 import type { EventType } from '@/lib/ai/buildPrompt';
 
@@ -13,13 +13,19 @@ interface Props {
   question?: string;
 }
 
+const PROVIDERS: { value: AiProvider; label: string; hint: string; placeholder: string }[] = [
+  { value: 'gemini', label: 'Gemini (免费)', hint: '需要 Google AI API Key', placeholder: 'AIza...' },
+  { value: 'anthropic', label: 'Claude (付费)', hint: '需要 Anthropic API Key', placeholder: 'sk-ant-...' },
+];
+
 export function AiPanel({ chart, question }: Props) {
-  const { apiKey, setApiKey, isValid } = useApiKey();
-  const { state, beginnerMode, setBeginnerMode, start, stop } = useAiInterpretation(chart, apiKey);
+  const [provider, setProvider] = useState<AiProvider>('gemini');
+  const { token, setToken, isValid } = useApiKey(provider);
+  const { state, beginnerMode, setBeginnerMode, start, stop } = useAiInterpretation(chart, token, provider);
   const [eventType, setEventType] = useState<EventType>('综合');
   const autoTriggered = useRef(false);
 
-  // 问事模式：有问题 + 有 API Key 时自动触发
+  // 问事模式：有问题 + 有 token 时自动触发
   useEffect(() => {
     if (question && isValid && !autoTriggered.current && state.status === 'idle') {
       autoTriggered.current = true;
@@ -40,6 +46,8 @@ export function AiPanel({ chart, question }: Props) {
     }
   };
 
+  const currentProvider = PROVIDERS.find(p => p.value === provider)!;
+
   return (
     <div className="rounded-xl border border-qimen-border bg-qimen-surface p-6 space-y-4">
       <h2 className="text-lg font-bold text-qimen-gold">AI 辅助解盘</h2>
@@ -52,10 +60,48 @@ export function AiPanel({ chart, question }: Props) {
         </div>
       )}
 
-      {/* API Key */}
+      {/* 模型选择 */}
       <div>
-        <label className="mb-1.5 block text-xs text-qimen-text-secondary">Claude API Key</label>
-        <ApiKeyInput apiKey={apiKey} isValid={isValid} onChange={setApiKey} />
+        <label className="mb-1.5 block text-xs text-qimen-text-secondary">AI 模型</label>
+        <div className="flex gap-2">
+          {PROVIDERS.map(p => (
+            <button
+              key={p.value}
+              onClick={() => setProvider(p.value)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                provider === p.value
+                  ? 'bg-qimen-gold text-white'
+                  : 'bg-qimen-bg text-qimen-text-secondary hover:text-qimen-text'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Token 输入 */}
+      <div>
+        <label className="mb-1.5 block text-xs text-qimen-text-secondary">
+          {currentProvider.hint}
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="password"
+            value={token}
+            onChange={e => setToken(e.target.value)}
+            placeholder={currentProvider.placeholder}
+            className="flex-1 rounded-lg border border-qimen-border bg-qimen-bg px-3 py-2 text-sm font-mono"
+          />
+          {isValid && (
+            <span className="self-center text-xs text-qimen-green">✓</span>
+          )}
+        </div>
+        {provider === 'gemini' && (
+          <p className="mt-1 text-[10px] text-qimen-text-secondary/60">
+            免费获取：<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="underline">aistudio.google.com/apikey</a>
+          </p>
+        )}
       </div>
 
       {/* 手动模式下显示事项选择 */}
@@ -106,8 +152,8 @@ export function AiPanel({ chart, question }: Props) {
       {/* AI 输出 */}
       {state.text && (
         <div className="rounded-lg bg-qimen-bg p-4">
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm text-qimen-text">
-            {state.text}
+          <div className="prose prose-sm max-w-none text-sm text-qimen-text prose-headings:text-qimen-gold prose-strong:text-qimen-text prose-li:my-0.5">
+            <ReactMarkdown>{state.text}</ReactMarkdown>
             {state.status === 'streaming' && (
               <span className="inline-block w-1.5 h-4 bg-qimen-gold animate-pulse ml-0.5" />
             )}
