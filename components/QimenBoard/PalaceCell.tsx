@@ -17,7 +17,7 @@ export function PalaceCell({ palace, isZhiFuPalace, onClick }: PalaceCellProps) 
     <button
       onClick={onClick}
       className={`
-        relative flex flex-col items-stretch rounded-lg border p-2 text-left
+        relative flex aspect-square w-full flex-col items-stretch justify-between rounded border p-1.5 text-left
         transition-all hover:shadow-md
         ${isZhiFuPalace ? 'border-qimen-gold ring-1 ring-qimen-gold/30' : 'border-qimen-border'}
         ${palace.isEmpty ? 'opacity-60' : ''}
@@ -25,22 +25,22 @@ export function PalaceCell({ palace, isZhiFuPalace, onClick }: PalaceCellProps) 
       `}
     >
       {/* 顶部：神 + 星 */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="deity-color font-medium">{palace.deity}</span>
-        <span className="star-color font-medium">{palace.star}</span>
+      <div className="flex items-center justify-between text-[10px] leading-tight">
+        <span className="deity-color">{palace.deity}</span>
+        <span className="star-color">{palace.star}</span>
       </div>
 
       {/* 中部：天盘干 / 地盘干 */}
-      <div className="my-1.5 flex items-center justify-center gap-2">
-        <span className="tian-gan-color text-lg font-bold">{palace.tianPanGan}</span>
-        <span className="text-xs text-qimen-text-secondary">/</span>
-        <span className="di-gan-color text-lg font-bold">{palace.diPanGan}</span>
+      <div className="flex items-center justify-center gap-1">
+        <span className="tian-gan-color text-base font-bold">{palace.tianPanGan}</span>
+        <span className="text-[10px] text-qimen-text-secondary">/</span>
+        <span className="di-gan-color text-base font-bold">{palace.diPanGan}</span>
       </div>
 
       {/* 底部：门 */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="gate-color font-medium">{palace.gate}门</span>
-        <span className="text-qimen-text-secondary">{palace.name}{palace.index} · {wuxing}</span>
+      <div className="flex items-center justify-between text-[10px] leading-tight">
+        <span className="gate-color">{palace.gate}门</span>
+        <span className="text-qimen-text-secondary">{palace.name}{palace.index}·{wuxing}</span>
       </div>
 
       {/* 空亡标记 */}

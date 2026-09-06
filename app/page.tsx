@@ -42,7 +42,7 @@ export default function HomePage() {
       )}
 
       {chart && (
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-md">
           <NinePalaceGrid chart={chart} />
         </div>
       )}
