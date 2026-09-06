@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { QimenChart } from '@/lib/qimen/types';
 import type { PalaceIndex } from '@/lib/qimen/constants';
-import { PALACE_GRID, STAR_ORIGINAL_PALACE } from '@/lib/qimen/constants';
+import { PALACE_GRID } from '@/lib/qimen/constants';
 import { PalaceCell } from './PalaceCell';
 import { PalaceDetail } from './PalaceDetail';
 
