@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-gold: #d4a847;
+  --color-red: #c0392b;
+  --color-blue: #2980b9;
+  --color-green: #27ae60;
+  --color-purple: #8e44ad;
+  --color-bg: #f8f6f0;
+  --color-surface: #ffffff;
+  --color-border: #d5cfc0;
+  --color-text: #2c2416;
+  --color-text-secondary: #7a7062;
+}
+
+.dark {
+  --color-gold: #e8c35a;
+  --color-red: #e74c3c;
+  --color-blue: #3498db;
+  --color-green: #2ecc71;
+  --color-purple: #9b59b6;
+  --color-bg: #1a1610;
+  --color-surface: #2c2416;
+  --color-border: #4a4030;
+  --color-text: #f0e8d8;
+  --color-text-secondary: #a09882;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* 九宫格中的层级色系 */
+.star-color { color: var(--color-purple); }
+.gate-color { color: var(--color-red); }
+.deity-color { color: var(--color-blue); }
+.tian-gan-color { color: var(--color-gold); }
+.di-gan-color { color: var(--color-green); }
