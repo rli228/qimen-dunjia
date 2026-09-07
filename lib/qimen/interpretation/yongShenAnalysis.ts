@@ -69,6 +69,16 @@ const GAN_WUXING: Record<string, string> = {
   '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水',
 };
 
+// ─── 河图数（定量预测） ──────────────────────────────────────────────────────
+
+const HETU_NUMBERS: Record<string, [number, number]> = {
+  '水': [1, 6],
+  '火': [2, 7],
+  '木': [3, 8],
+  '金': [4, 9],
+  '土': [5, 10],
+};
+
 // ─── 宫位方位 ────────────────────────────────────────────────────────────────
 
 const PALACE_DIRECTION: Record<number, string> = {
@@ -375,6 +385,9 @@ function generateConclusion(
     // Fix 2: 辛双盘比较
     const xinLine = getXinDualComparison(chart);
     if (xinLine) lines.push(xinLine);
+    // 河图数预测金牌数量
+    const hetuLine = getHetuPrediction(locations);
+    if (hetuLine) lines.push(hetuLine);
   } else if (primary) {
     const dir = PALACE_DIRECTION[primary.palace!] ?? '';
     lines.push(getKeyFactorLine(eventType, primary, dir));
@@ -516,6 +529,18 @@ function getXinDualComparison(chart: QimenChart): string | null {
     return `辛（金牌）天盘${tianPanXinPalace}宫(${tianWx})生地盘${diPanXinPalace}宫(${diWx})，客队荣誉泄于主队，利主队。`;
   }
   return `辛（金牌）地盘在${diPanXinPalace}宫(${diWx})，天盘在${tianPanXinPalace}宫(${tianWx})，比和。`;
+}
+
+/** 河图数预测：辛（金牌）落宫五行 → 数量提示 */
+function getHetuPrediction(locations: YongShenLocation[]): string | null {
+  const jinPai = locations.find(l => l.role.label === '金牌');
+  if (!jinPai || !jinPai.palace || !jinPai.palaceWuxing) return null;
+
+  const nums = HETU_NUMBERS[jinPai.palaceWuxing];
+  if (!nums) return null;
+
+  const [sheng, cheng] = nums;
+  return `辛（金牌）落${jinPai.palaceName}，宫属${jinPai.palaceWuxing}，河图数${sheng}、${cheng}，按传统断法主队金牌数与${sheng}或${cheng}相关（如${sheng}、${sheng + 10}、${cheng}、${cheng + 10}枚）。`;
 }
 
 /** 主用神具体状态行（含方位建议） */
