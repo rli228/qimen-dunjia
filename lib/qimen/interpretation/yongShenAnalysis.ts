@@ -11,7 +11,7 @@
 
 import type { QimenChart } from '../types';
 import type { PalaceIndex, GateName, StarName, SanQiLiuYi } from '../constants';
-import { PALACE_NAMES, PALACE_WUXING, STAR_FORTUNE, GATE_FORTUNE } from '../constants';
+import { PALACE_NAMES, PALACE_WUXING, STAR_FORTUNE, GATE_FORTUNE, JIA_HIDDEN } from '../constants';
 import { GATE_WUXING, JIEQI_WUXING, getVitality } from './data/gateWuxing';
 import type { EventTypeKey, YongShenRole } from './data/yongShen';
 import { EVENT_TEMPLATES } from './data/yongShen';
@@ -78,11 +78,18 @@ const PALACE_DIRECTION: Record<number, string> = {
 
 // ─── 定位用神 ────────────────────────────────────────────────────────────────
 
+function ganToSanQi(gan: string, zhi: string): string {
+  if (gan === '甲') {
+    return JIA_HIDDEN[gan + zhi] ?? gan;
+  }
+  return gan;
+}
+
 function resolveTarget(chart: QimenChart, role: YongShenRole): string {
   if (!role.targetSource) return role.target;
   switch (role.targetSource) {
-    case 'dayGan': return chart.siZhu.day.gan;
-    case 'hourGan': return chart.siZhu.hour.gan;
+    case 'dayGan': return ganToSanQi(chart.siZhu.day.gan, chart.siZhu.day.zhi);
+    case 'hourGan': return ganToSanQi(chart.siZhu.hour.gan, chart.siZhu.hour.zhi);
     case 'zhiFu': return chart.zhiFu;
     default: return role.target;
   }
