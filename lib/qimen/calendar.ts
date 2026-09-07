@@ -146,11 +146,13 @@ export function getYuanAndJu(input: ChartInput, jieQiInfo: JieQiInfo): {
  * 拆补法定局
  *
  * 核心逻辑：
- * 1. 节气起始日所在的半旬（甲/己开头的5天周期），从节气当天起算到该半旬结束 = 上元
- *    （若节气恰好在符头甲/己日，上元为完整5天；否则上元不足5天，即"拆"）
- * 2. 接下来完整的5天 = 中元
- * 3. 再接下来5天 = 下元
- * 4. 三元之后、下一节气之前的剩余天数 = "补"，使用下一节气的上元局数
+ * 1. 找到当天所在旬的旬首（甲日），即符头
+ * 2. 根据旬首地支分类确定三元：
+ *    - 子午卯酉 → 上元
+ *    - 寅申巳亥 → 中元
+ *    - 辰戌丑未 → 下元
+ * 3. "拆"：旬跨节气时，节气前后各用各自节气的局数
+ *    "补"：自然由节气归属处理
  */
 function getYuanAndJuChaiBu(input: ChartInput, jieQiInfo: JieQiInfo): {
   yuan: '上元' | '中元' | '下元';
@@ -163,43 +165,29 @@ function getYuanAndJuChaiBu(input: ChartInput, jieQiInfo: JieQiInfo): {
 
   const lunar = solar.getLunar();
   const dayGan = lunar.getDayGanExact() as TianGan;
+  const dayZhi = lunar.getDayZhiExact() as DiZhi;
   const ganIndex = getGanIndex(dayGan);
+  const zhiIndex = getZhiIndex(dayZhi);
 
-  // 计算当前日期距节气开始的天数
-  const inputDate = new Date(solar.getYear(), solar.getMonth() - 1, solar.getDay());
-  const jieQiDate = new Date(
-    jieQiInfo.currentDate.getFullYear(),
-    jieQiInfo.currentDate.getMonth(),
-    jieQiInfo.currentDate.getDate()
-  );
-  const daysSinceJieQi = Math.floor((inputDate.getTime() - jieQiDate.getTime()) / (24 * 60 * 60 * 1000));
+  // 旬首地支：从当天回退 ganIndex 天到甲日
+  const xunShouZhiIndex = ((zhiIndex - ganIndex) % 12 + 12) % 12;
+  const xunShouZhi = DI_ZHI[xunShouZhiIndex];
 
-  // 节气起始日的天干序号（通过当前日天干回推）
-  const jieQiGanIndex = ((ganIndex - daysSinceJieQi) % 10 + 10) % 10;
-
-  // 节气起始日在半旬中的位置（0=甲/己, 1=乙/庚, ..., 4=戊/癸）
-  const jieQiDaysIntoHalfXun = jieQiGanIndex % 5;
-
-  // 上元天数：从节气起始日到该半旬结束
-  // 若节气恰在符头上（甲/己日），上元为完整5天
-  const shangYuanLen = jieQiDaysIntoHalfXun === 0 ? 5 : (5 - jieQiDaysIntoHalfXun);
+  // 根据旬首地支确定三元
+  const SHANG_YUAN_ZHI = ['子', '午', '卯', '酉'];
+  const ZHONG_YUAN_ZHI = ['寅', '申', '巳', '亥'];
+  // 辰戌丑未 → 下元
 
   let yuan: '上元' | '中元' | '下元';
-  let currentJieQi = jieQiInfo.current;
-
-  if (daysSinceJieQi < shangYuanLen) {
+  if (SHANG_YUAN_ZHI.includes(xunShouZhi)) {
     yuan = '上元';
-  } else if (daysSinceJieQi < shangYuanLen + 5) {
+  } else if (ZHONG_YUAN_ZHI.includes(xunShouZhi)) {
     yuan = '中元';
-  } else if (daysSinceJieQi < shangYuanLen + 10) {
-    yuan = '下元';
   } else {
-    // "补"的情况：三元已过，使用下一节气的上元局数
-    currentJieQi = jieQiInfo.next;
-    yuan = '上元';
+    yuan = '下元';
   }
 
-  return lookupJu(currentJieQi, yuan);
+  return lookupJu(jieQiInfo.current, yuan);
 }
 
 /**
