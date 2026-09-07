@@ -49,51 +49,45 @@ export function layoutDiPan(
 /**
  * 确定值符（当值九星）和值使（当值八门）
  *
- * 时辰的天干对应一个六仪或三奇，
- * 找到该六仪/三奇在地盘中所处的宫位，
- * 该宫位原始的九星即为值符，原始的八门即为值使
+ * 根据时柱所在旬的旬首对应六仪，在地盘上找到该六仪所在宫位，
+ * 该宫位原始的九星即为值符，原始的八门即为值使。
+ *
+ * 注意：值符/值使由旬首六仪决定，不是由时干直接决定。
+ * 时干只用于确定天盘/人盘的旋转目标宫位。
  */
 export function getZhiFuZhiShi(
-  hourGan: TianGan,
+  xunShouYi: SanQiLiuYi,
   diPan: Record<PalaceIndex, SanQiLiuYi>,
-  dunType: '阳遁' | '阴遁'
 ): {
   zhiFu: StarName;
   zhiShi: Exclude<GateName, '中'>;
   zhiFuOriginalPalace: PalaceIndex;
 } {
-  // 时干如果是甲，需转换为对应的六仪
-  let shiGan: SanQiLiuYi = hourGan as SanQiLiuYi;
-  if (hourGan === '甲') {
-    // 甲遁于戊下，时干为甲时按戊处理
-    shiGan = '戊';
-  }
-
-  // 找到时干（六仪/三奇）在地盘上的宫位
-  let shiGanPalace: PalaceIndex | null = null;
+  // 找到旬首六仪在地盘上的宫位
+  let yiPalace: PalaceIndex | null = null;
   for (const [palace, gan] of Object.entries(diPan)) {
-    if (gan === shiGan) {
-      shiGanPalace = Number(palace) as PalaceIndex;
+    if (gan === xunShouYi) {
+      yiPalace = Number(palace) as PalaceIndex;
       break;
     }
   }
 
-  if (!shiGanPalace) {
-    throw new Error(`未找到时干 ${shiGan} 在地盘上的位置`);
+  if (!yiPalace) {
+    throw new Error(`未找到旬首六仪 ${xunShouYi} 在地盘上的位置`);
   }
 
   // 找到该宫位原始的九星（值符）和八门（值使）
   const zhiFu = Object.entries(STAR_ORIGINAL_PALACE).find(
-    ([_, palace]) => palace === shiGanPalace
+    ([_, palace]) => palace === yiPalace
   )![0] as StarName;
 
   // 中五宫寄坤二宫：如果值符是天禽星，则按坤二宫处理
-  const effectivePalace = shiGanPalace === 5 ? 2 : shiGanPalace;
+  const effectivePalace = yiPalace === 5 ? 2 : yiPalace;
   const zhiShi = Object.entries(GATE_ORIGINAL_PALACE).find(
     ([_, palace]) => palace === effectivePalace
   )![0] as Exclude<GateName, '中'>;
 
-  return { zhiFu, zhiShi, zhiFuOriginalPalace: shiGanPalace };
+  return { zhiFu, zhiShi, zhiFuOriginalPalace: yiPalace };
 }
 
 // ─── 天盘排布（转盘） ────────────────────────────────────────────────────────
@@ -167,50 +161,42 @@ export function layoutTianPan(
   return { tianPanGan, starPalaces };
 }
 
-// ─── 人盘排布（八门转盘） ────────────────────────────────────────────────────
+// ─── 人盘排布（小值符法） ────────────────────────────────────────────────────
+
+// 八门固定循环顺序
+const GATE_CYCLE: Exclude<GateName, '中'>[] = ['休', '生', '伤', '杜', '景', '死', '惊', '开'];
 
 /**
- * 排布人盘：值使（八门）从原始宫位转到时干落宫
+ * 排布人盘：八门按小值符法排布
  *
- * 与天盘类似，但值使的旋转起点是值使门的原始宫位
+ * 小值符法：
+ * 1. 值使门从原宫按洛书九宫数字顺序移动 ganIndex 步（甲=0不动，乙=1，…，癸=9）
+ *    用 mod 9 计算（含中五宫），若落中五宫则寄坤二宫
+ * 2. 其余门按固定循环(休→生→伤→杜→景→死→惊→开)沿空间顺/逆时针排列
+ * 3. 阳遁顺时针(ROTATE_ORDER)，阴遁逆时针
  */
 export function layoutRenPan(
-  diPan: Record<PalaceIndex, SanQiLiuYi>,
   zhiShi: Exclude<GateName, '中'>,
   hourGan: TianGan,
+  dunType: '阳遁' | '阴遁',
 ): Record<PalaceIndex, Exclude<GateName, '中'>> {
-  let shiGan: SanQiLiuYi = hourGan as SanQiLiuYi;
-  if (hourGan === '甲') shiGan = '戊';
+  const ganIndex = TIAN_GAN.indexOf(hourGan);
+  const direction = dunType === '阳遁' ? 1 : -1;
 
-  // 值使原始宫位
+  const zhiShiCycleIdx = GATE_CYCLE.indexOf(zhiShi);
   const zhiShiOriginal = GATE_ORIGINAL_PALACE[zhiShi];
 
-  // 时干在地盘的宫位
-  let targetPalace: PalaceIndex = 1;
-  for (const [palace, gan] of Object.entries(diPan)) {
-    if (gan === shiGan) {
-      targetPalace = Number(palace) as PalaceIndex;
-      break;
-    }
-  }
+  // 值使目标宫：用 mod 9（含中宫）计算
+  let target = ((zhiShiOriginal - 1 + ganIndex * direction) % 9 + 9) % 9 + 1;
+  if (target === 5) target = 2; // 中五宫寄坤二宫
 
-  // 计算旋转步数
-  const fromIdx = ROTATE_ORDER.indexOf(zhiShiOriginal);
-  const toIdx = ROTATE_ORDER.indexOf(targetPalace === 5 ? 2 : targetPalace);
-  const steps = ((toIdx - fromIdx) % 8 + 8) % 8;
-
-  // 旋转八门
+  // 从值使目标宫开始，沿 ROTATE_ORDER（空间顺/逆时针）依次排列八门
+  const startIdx = ROTATE_ORDER.indexOf(target as PalaceIndex);
   const gatePalaces = {} as Record<PalaceIndex, Exclude<GateName, '中'>>;
   for (let i = 0; i < 8; i++) {
-    const fromPalace = ROTATE_ORDER[i];
-    const toPalace = ROTATE_ORDER[(i + steps) % 8];
-
-    const gate = Object.entries(GATE_ORIGINAL_PALACE).find(
-      ([_, p]) => p === fromPalace
-    )?.[0] as Exclude<GateName, '中'> | undefined;
-    if (gate) {
-      gatePalaces[toPalace] = gate;
-    }
+    const gate = GATE_CYCLE[(zhiShiCycleIdx + i) % 8];
+    const ringIdx = ((startIdx + i * direction) % 8 + 8) % 8;
+    gatePalaces[ROTATE_ORDER[ringIdx]] = gate;
   }
 
   return gatePalaces;
@@ -264,17 +250,20 @@ export function generateChart(input: ChartInput): QimenChart {
   // 4. 地盘
   const diPan = layoutDiPan(juNumber, dunType);
 
-  // 5. 值符值使
+  // 5. 旬首与空亡（提前计算，值符值使需要旬首六仪）
   const hourGan = siZhu.hour.gan;
-  const { zhiFu, zhiShi } = getZhiFuZhiShi(hourGan, diPan, dunType);
+  const { xunShou, kongWang, xunShouYi } = getXunShouInfo(siZhu.hour.gan, siZhu.hour.zhi);
 
-  // 6. 天盘（九星 + 天盘干）
+  // 6. 值符值使（由旬首六仪决定）
+  const { zhiFu, zhiShi } = getZhiFuZhiShi(xunShouYi as SanQiLiuYi, diPan);
+
+  // 7. 天盘（九星 + 天盘干）
   const { tianPanGan, starPalaces } = layoutTianPan(diPan, zhiFu, hourGan, dunType);
 
-  // 7. 人盘（八门）
-  const gatePalaces = layoutRenPan(diPan, zhiShi, hourGan);
+  // 8. 人盘（八门 — 小值符法，阳遁顺时针/阴遁逆时针）
+  const gatePalaces = layoutRenPan(zhiShi, hourGan, dunType);
 
-  // 8. 值符落宫（用于神盘）
+  // 9. 值符落宫（用于神盘）— 时干在地盘的位置
   let shiGan: SanQiLiuYi = hourGan as SanQiLiuYi;
   if (hourGan === '甲') shiGan = '戊';
   let zhiFuTarget: PalaceIndex = 1;
@@ -285,11 +274,8 @@ export function generateChart(input: ChartInput): QimenChart {
     }
   }
 
-  // 9. 神盘
+  // 10. 神盘
   const deityPalaces = layoutShenPan(zhiFuTarget, dunType);
-
-  // 10. 旬首与空亡
-  const { xunShou, kongWang } = getXunShouInfo(siZhu.hour.gan, siZhu.hour.zhi);
 
   // 11. 组装九宫
   const palaces = {} as Record<PalaceIndex, Palace>;
