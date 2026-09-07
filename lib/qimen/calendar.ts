@@ -146,13 +146,11 @@ export function getYuanAndJu(input: ChartInput, jieQiInfo: JieQiInfo): {
  * 拆补法定局
  *
  * 核心逻辑：
- * 1. 找到当天所在旬的旬首（甲日），即符头
- * 2. 根据旬首地支分类确定三元：
+ * 1. 从日柱天干往回找最近的甲或己日，即符头
+ * 2. 根据符头地支分类确定三元：
  *    - 子午卯酉 → 上元
  *    - 寅申巳亥 → 中元
  *    - 辰戌丑未 → 下元
- * 3. "拆"：旬跨节气时，节气前后各用各自节气的局数
- *    "补"：自然由节气归属处理
  */
 function getYuanAndJuChaiBu(input: ChartInput, jieQiInfo: JieQiInfo): {
   yuan: '上元' | '中元' | '下元';
@@ -169,19 +167,20 @@ function getYuanAndJuChaiBu(input: ChartInput, jieQiInfo: JieQiInfo): {
   const ganIndex = getGanIndex(dayGan);
   const zhiIndex = getZhiIndex(dayZhi);
 
-  // 旬首地支：从当天回退 ganIndex 天到甲日
-  const xunShouZhiIndex = ((zhiIndex - ganIndex) % 12 + 12) % 12;
-  const xunShouZhi = DI_ZHI[xunShouZhiIndex];
+  // 符头：从日干往回到最近的甲(0)或己(5)，距离 = ganIndex % 5
+  const stepsToFuTou = ganIndex % 5;
+  const fuTouZhiIndex = ((zhiIndex - stepsToFuTou) % 12 + 12) % 12;
+  const fuTouZhi = DI_ZHI[fuTouZhiIndex];
 
-  // 根据旬首地支确定三元
+  // 根据符头地支确定三元
   const SHANG_YUAN_ZHI = ['子', '午', '卯', '酉'];
   const ZHONG_YUAN_ZHI = ['寅', '申', '巳', '亥'];
   // 辰戌丑未 → 下元
 
   let yuan: '上元' | '中元' | '下元';
-  if (SHANG_YUAN_ZHI.includes(xunShouZhi)) {
+  if (SHANG_YUAN_ZHI.includes(fuTouZhi)) {
     yuan = '上元';
-  } else if (ZHONG_YUAN_ZHI.includes(xunShouZhi)) {
+  } else if (ZHONG_YUAN_ZHI.includes(fuTouZhi)) {
     yuan = '中元';
   } else {
     yuan = '下元';
