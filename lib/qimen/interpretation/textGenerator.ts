@@ -270,11 +270,12 @@ function buildSummary(chart: QimenChart, result: InterpretationResult): TextSect
   score += jiPatterns * 2;
   score -= xiongPatterns * 2;
 
-  // 十干克应加分
+  // 十干克应加分（基线67%凶，只在吉多于2个时加分，凶多于6个时减分）
   const jiGan = result.ganInteractions.filter(gi => gi.fortune === '吉').length;
   const xiongGan = result.ganInteractions.filter(gi => gi.fortune === '凶').length;
-  score += jiGan;
-  score -= xiongGan;
+  if (jiGan >= 3) score += 1;
+  if (jiGan >= 5) score += 1;
+  if (xiongGan >= 7) score -= 1;
 
   // 值符值使加分
   const starF = STAR_FORTUNE[chart.zhiFu];
@@ -285,17 +286,17 @@ function buildSummary(chart: QimenChart, result: InterpretationResult): TextSect
   if (gateF === '吉') score += 1;
   if (gateF === '凶') score -= 1;
 
-  // 门加宫加分
+  // 门加宫加分（基线较均衡，适度加减）
   const jiGatePalace = result.gatePalace.filter(g => g.fortune === '吉').length;
   const xiongGatePalace = result.gatePalace.filter(g => g.fortune === '凶').length;
-  score += Math.floor(jiGatePalace / 2);
-  score -= Math.floor(xiongGatePalace / 2);
+  if (jiGatePalace >= 4) score += 1;
+  if (xiongGatePalace >= 4) score -= 1;
 
-  // 门加干加分
+  // 门加干加分（基线56%凶，只在吉多于3个时加分）
   const jiGateStem = result.gateStem.filter(g => g.fortune === '吉').length;
   const xiongGateStem = result.gateStem.filter(g => g.fortune === '凶').length;
-  score += Math.floor(jiGateStem / 2);
-  score -= Math.floor(xiongGateStem / 2);
+  if (jiGateStem >= 3) score += 1;
+  if (xiongGateStem >= 6) score -= 1;
 
   // 值使门旺相加分
   const zhiShiVit = result.gateVitality.find(v => v.gate === chart.zhiShi);
@@ -312,13 +313,13 @@ function buildSummary(chart: QimenChart, result: InterpretationResult): TextSect
 
   // 综合评语
   lines.push('');
-  if (score >= 4) {
+  if (score >= 5) {
     lines.push('【综合判断】此盘整体偏吉，利于行动、求谋。格局吉利因素较多，可积极把握机会。');
-  } else if (score >= 1) {
+  } else if (score >= 2) {
     lines.push('【综合判断】此盘小吉，有利因素略多于不利。可以行动但需注意防范风险。');
-  } else if (score >= -1) {
+  } else if (score >= -2) {
     lines.push('【综合判断】此盘吉凶参半，形势不明朗。建议谨慎行事，观望为主，不宜冒进。');
-  } else if (score >= -4) {
+  } else if (score >= -5) {
     lines.push('【综合判断】此盘偏凶，不利因素较多。宜守不宜攻，暂缓重大决策，等待时机。');
   } else {
     lines.push('【综合判断】此盘大凶，多重凶格凶应叠加。强烈建议暂停行动，静待转机。');
