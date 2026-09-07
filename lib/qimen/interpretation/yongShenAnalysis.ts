@@ -2,6 +2,11 @@
  * 用神分析引擎
  *
  * 根据事类模板定位用神落宫，分析生克关系，给出结论
+ *
+ * 设计原则：
+ * - 流派忠实度：忠实反映传统断法的优先级和逻辑
+ * - 校准表达：条件式语言，不做断言式预测
+ * - 信号一致性：报告各用神信号是否指向同一方向
  */
 
 import type { QimenChart } from '../types';
@@ -20,6 +25,7 @@ export interface YongShenLocation {
   palaceWuxing: string;
   summary: string;             // 该用神的状态总结
   fortune: '吉' | '凶' | '平';
+  score: number;               // 原始评分（保留程度信息）
 }
 
 export interface YongShenRelation {
@@ -34,6 +40,7 @@ export interface YongShenResult {
   locations: YongShenLocation[];
   relations: YongShenRelation[];
   conclusion: string;
+  coherence: '强' | '中' | '弱';  // 信号一致性
 }
 
 // ─── 五行生克 ────────────────────────────────────────────────────────────────
@@ -62,9 +69,30 @@ const GAN_WUXING: Record<string, string> = {
   '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水',
 };
 
+// ─── 宫位方位 ────────────────────────────────────────────────────────────────
+
+const PALACE_DIRECTION: Record<number, string> = {
+  1: '北方', 2: '西南方', 3: '东方', 4: '东南方',
+  5: '中央', 6: '西北方', 7: '西方', 8: '东北方', 9: '南方',
+};
+
 // ─── 定位用神 ────────────────────────────────────────────────────────────────
 
+function resolveTarget(chart: QimenChart, role: YongShenRole): string {
+  if (!role.targetSource) return role.target;
+  switch (role.targetSource) {
+    case 'dayGan': return chart.siZhu.day.gan;
+    case 'hourGan': return chart.siZhu.hour.gan;
+    case 'zhiFu': return chart.zhiFu;
+    default: return role.target;
+  }
+}
+
 function locateYongShen(chart: QimenChart, role: YongShenRole): YongShenLocation {
+  const target = resolveTarget(chart, role);
+  // Patch role with resolved target for display
+  const resolvedRole = { ...role, target };
+
   let foundPalace: PalaceIndex | null = null;
 
   for (let i = 1; i <= 9; i++) {
@@ -72,18 +100,22 @@ function locateYongShen(chart: QimenChart, role: YongShenRole): YongShenLocation
     const p = chart.palaces[idx];
 
     if (role.type === 'gan') {
-      // 优先匹配天盘干，其次地盘干
-      if (p.tianPanGan === role.target || p.diPanGan === role.target) {
-        foundPalace = idx;
-        break;
+      const scope = role.searchScope;
+      if (scope === 'diPan') {
+        if (p.diPanGan === target) { foundPalace = idx; break; }
+      } else if (scope === 'tianPan') {
+        if (p.tianPanGan === target) { foundPalace = idx; break; }
+      } else {
+        // 默认：优先匹配天盘干，其次地盘干
+        if (p.tianPanGan === target || p.diPanGan === target) { foundPalace = idx; break; }
       }
     } else if (role.type === 'gate') {
-      if (idx !== 5 && p.gate === role.target) {
+      if (idx !== 5 && p.gate === target) {
         foundPalace = idx;
         break;
       }
     } else if (role.type === 'star') {
-      if (p.star === role.target) {
+      if (p.star === target) {
         foundPalace = idx;
         break;
       }
@@ -92,12 +124,13 @@ function locateYongShen(chart: QimenChart, role: YongShenRole): YongShenLocation
 
   if (!foundPalace) {
     return {
-      role,
+      role: resolvedRole,
       palace: null,
       palaceName: '未定位',
       palaceWuxing: '',
-      summary: `${role.label}（${role.target}）未在盘面中定位到`,
+      summary: `${resolvedRole.label}（${target}）未在盘面中定位到`,
       fortune: '平',
+      score: 0,
     };
   }
 
@@ -161,10 +194,10 @@ function locateYongShen(chart: QimenChart, role: YongShenRole): YongShenLocation
   }
 
   const fortune: '吉' | '凶' | '平' = fortuneScore >= 2 ? '吉' : fortuneScore <= -2 ? '凶' : '平';
-  const summary = `${role.label}（${role.target}）落${palaceName}(${palaceWx})，天盘${palace.tianPanGan}地盘${palace.diPanGan}，${palace.star}、${palace.gate}门、${palace.deity}` +
+  const summary = `${resolvedRole.label}（${target}）落${palaceName}(${palaceWx})，天盘${palace.tianPanGan}地盘${palace.diPanGan}，${palace.star}、${palace.gate}门、${palace.deity}` +
     (factors.length > 0 ? `。${factors.join('，')}` : '');
 
-  return { role, palace: foundPalace, palaceName, palaceWuxing: palaceWx, summary, fortune };
+  return { role: resolvedRole, palace: foundPalace, palaceName, palaceWuxing: palaceWx, summary, fortune, score: fortuneScore };
 }
 
 // ─── 分析用神关系 ────────────────────────────────────────────────────────────
@@ -196,85 +229,212 @@ function analyzeRelations(locations: YongShenLocation[]): YongShenRelation[] {
   return relations;
 }
 
+// ─── 信号一致性 ────────────────────────────────────────────────────────────
+
+function getCoherence(locations: YongShenLocation[], relations: YongShenRelation[]): '强' | '中' | '弱' {
+  const allFortunes = [
+    ...locations.filter(l => l.palace !== null).map(l => l.fortune),
+    ...relations.map(r => r.fortune),
+  ];
+  if (allFortunes.length === 0) return '弱';
+
+  const jiCount = allFortunes.filter(f => f === '吉').length;
+  const xiongCount = allFortunes.filter(f => f === '凶').length;
+  const total = allFortunes.length;
+
+  // 强：80%以上信号指向同一方向
+  const dominant = Math.max(jiCount, xiongCount);
+  const ratio = dominant / total;
+
+  if (ratio >= 0.75) return '强';
+  if (ratio >= 0.5) return '中';
+  return '弱';
+}
+
 // ─── 生成结论 ────────────────────────────────────────────────────────────────
+
+type Tier = '大吉' | '小吉' | '平' | '小凶' | '大凶';
 
 function generateConclusion(
   eventType: EventTypeKey,
   locations: YongShenLocation[],
   relations: YongShenRelation[],
+  coherence: '强' | '中' | '弱',
 ): string {
   const template = EVENT_TEMPLATES[eventType];
   const lines: string[] = [];
 
-  // 统计吉凶
-  const jiCount = locations.filter(l => l.fortune === '吉').length + relations.filter(r => r.fortune === '吉').length;
-  const xiongCount = locations.filter(l => l.fortune === '凶').length + relations.filter(r => r.fortune === '凶').length;
-  const hasKongWang = locations.some(l => l.palace !== null && l.summary.includes('空亡'));
-
-  if (jiCount > xiongCount + 1) {
-    lines.push(`【${eventType}】用神整体偏吉，多数用神得位有力。`);
-    lines.push(getPositiveAdvice(eventType));
-  } else if (xiongCount > jiCount + 1) {
-    lines.push(`【${eventType}】用神整体偏凶，关键用神受克或失令。`);
-    lines.push(getNegativeAdvice(eventType));
-  } else {
-    lines.push(`【${eventType}】用神吉凶参半，需谨慎把握。`);
-    lines.push(getNeutralAdvice(eventType));
+  // 加权计分：用 role.weight × score
+  let weightedScore = 0;
+  let totalWeight = 0;
+  for (const loc of locations) {
+    if (loc.palace !== null) {
+      weightedScore += loc.role.weight * loc.score;
+      totalWeight += loc.role.weight;
+    }
   }
 
-  if (hasKongWang) {
-    lines.push('注意：有用神落空亡，所主之事力量不足，需等待填实。');
+  // 关系得分（权重=1，不加权）
+  for (const rel of relations) {
+    if (rel.fortune === '吉') weightedScore += 1;
+    else if (rel.fortune === '凶') weightedScore -= 1;
+  }
+  totalWeight += relations.length || 1;
+
+  // 归一化到 [-1, 1] 区间
+  let normalized = totalWeight > 0 ? weightedScore / (totalWeight * 2) : 0;
+
+  // 体育竞猜特殊处理：tier基于主客队对比而非总分
+  if (eventType === '体育竞猜') {
+    const home = locations.find(l => l.role.label === '主队');
+    const away = locations.find(l => l.role.label === '客队');
+    if (home && away && home.palace !== null && away.palace !== null) {
+      const diff = home.score - away.score;
+      // 映射到 [-1, 1]：diff 范围大约 -6~+6
+      normalized = Math.max(-1, Math.min(1, diff / 5));
+    }
   }
 
+  // 5档判断
+  let tier: Tier;
+  if (normalized > 0.4) tier = '大吉';
+  else if (normalized > 0.1) tier = '小吉';
+  else if (normalized >= -0.1) tier = '平';
+  else if (normalized >= -0.4) tier = '小凶';
+  else tier = '大凶';
+
+  // 找主用神（weight最大的已定位用神）
+  const primaryLocations = locations
+    .filter(l => l.palace !== null)
+    .sort((a, b) => b.role.weight - a.role.weight);
+  const primary = primaryLocations[0];
+
+  // 第一行：基于档位的条件式判断
+  const tierLine = getTierStatement(eventType, tier);
+  lines.push(tierLine);
+
+  // 第二行：事类特定分析
+  if (eventType === '体育竞猜') {
+    const sportLine = getSportComparisonLine(locations);
+    if (sportLine) lines.push(sportLine);
+  } else if (primary) {
+    const dir = PALACE_DIRECTION[primary.palace!] ?? '';
+    lines.push(getKeyFactorLine(eventType, primary, dir));
+  }
+
+  // 第三行：空亡提示
+  const kongWangLocs = locations.filter(l => l.palace !== null && l.summary.includes('空亡'));
+  if (kongWangLocs.length > 0) {
+    const names = kongWangLocs.map(l => l.role.label).join('、');
+    lines.push(`${names}落空亡，所主之事力量不足，需等待填实。`);
+  }
+
+  // 第四行：信号一致性
+  if (coherence === '弱') {
+    lines.push('各用神信号方向不一致，局势不明朗，建议综合多方面信息判断。');
+  } else if (coherence === '强') {
+    lines.push('各用神信号方向一致，此局指向性较为明确。');
+  }
+
+  // 末尾：分析要点
   lines.push('');
   lines.push(`分析要点：${template.analysisGuide}`);
 
   return lines.join('\n');
 }
 
-function getPositiveAdvice(eventType: EventTypeKey): string {
-  const map: Record<EventTypeKey, string> = {
-    '婚姻感情': '婚姻有成之象，双方有合意，利于推进感情。',
-    '求财经商': '财运亨通，求财可得，利于经商投资。',
-    '考试求学': '文运昌盛，考试顺利，利于学业进取。',
-    '出行远行': '出行顺利，一路平安，利于远行。',
-    '疾病健康': '病情可控，有望康复，利于求医。',
-    '官讼诉讼': '诉讼有利，我方占优，可积极应对。',
-    '求职面试': '求职顺利，有贵人相助，利于入职。',
-    '失物寻找': '失物可寻，注意用神落宫方位。',
-    '体育竞猜': '主队气势旺盛，利主队取胜。',
+/** 条件式表达，按5档 × 事类 */
+function getTierStatement(eventType: EventTypeKey, tier: Tier): string {
+  const statements: Record<Tier, Record<EventTypeKey, string>> = {
+    '大吉': {
+      '婚姻感情': '【婚姻感情】按传统断法，此局用神得位有力，多项因素利于婚姻感情发展。',
+      '求财经商': '【求财经商】按传统断法，此局财星旺相，多项因素利于求财经商。',
+      '考试求学': '【考试求学】按传统断法，此局文昌星旺，多项因素利于考试求学。',
+      '出行远行': '【出行远行】按传统断法，此局出行用神得力，多项因素利于出行。',
+      '疾病健康': '【疾病健康】按传统断法，此局医药用神有力，生机旺盛，病情可控。',
+      '官讼诉讼': '【官讼诉讼】按传统断法，此局我方用神得力，多项因素利于诉讼。',
+      '求职面试': '【求职面试】按传统断法，此局求职用神旺相，多项因素利于入职。',
+      '失物寻找': '【失物寻找】按传统断法，此局失物用神有力，寻回可能性较大。',
+      '体育竞猜': '【体育竞猜】按传统断法，此局主队用神占优，多项因素利主队。',
+    },
+    '小吉': {
+      '婚姻感情': '【婚姻感情】按传统断法，此局用神状态尚可，婚姻感情有向好趋势。',
+      '求财经商': '【求财经商】按传统断法，此局财运尚可，求财有一定把握。',
+      '考试求学': '【考试求学】按传统断法，此局文运尚可，考试有一定优势。',
+      '出行远行': '【出行远行】按传统断法，此局出行条件尚可，总体利于出行。',
+      '疾病健康': '【疾病健康】按传统断法，此局医药尚有助力，病情趋于稳定。',
+      '官讼诉讼': '【官讼诉讼】按传统断法，此局我方略占优势，诉讼可争取。',
+      '求职面试': '【求职面试】按传统断法，此局求职条件尚可，有一定机会。',
+      '失物寻找': '【失物寻找】按传统断法，此局失物用神尚可，有一定寻回可能。',
+      '体育竞猜': '【体育竞猜】按传统断法，此局主队略占优势，但优势不大。',
+    },
+    '平': {
+      '婚姻感情': '【婚姻感情】按传统断法，此局用神吉凶参半，婚姻感情需双方共同经营。',
+      '求财经商': '【求财经商】按传统断法，此局财运吉凶参半，求财需谨慎操作。',
+      '考试求学': '【考试求学】按传统断法，此局文运吉凶参半，考试发挥有不确定性。',
+      '出行远行': '【出行远行】按传统断法，此局出行条件吉凶参半，注意安全预案。',
+      '疾病健康': '【疾病健康】按传统断法，此局用神吉凶参半，病情有反复可能，需耐心调养。',
+      '官讼诉讼': '【官讼诉讼】按传统断法，此局双方势均力敌，诉讼胜负难料。',
+      '求职面试': '【求职面试】按传统断法，此局求职条件吉凶参半，竞争激烈，需展示优势。',
+      '失物寻找': '【失物寻找】按传统断法，此局失物用神状态一般，寻找需耗费时间精力。',
+      '体育竞猜': '【体育竞猜】按传统断法，此局双方实力接近，平局可能性较大。',
+    },
+    '小凶': {
+      '婚姻感情': '【婚姻感情】按传统断法，此局用神状态欠佳，婚姻感情存在一定阻碍。',
+      '求财经商': '【求财经商】按传统断法，此局财运欠佳，求财存在一定风险。',
+      '考试求学': '【考试求学】按传统断法，此局文运欠佳，考试准备可能不足。',
+      '出行远行': '【出行远行】按传统断法，此局出行条件欠佳，路上可能有阻碍。',
+      '疾病健康': '【疾病健康】按传统断法，此局医药用神不力，病情可能加重，需积极治疗。',
+      '官讼诉讼': '【官讼诉讼】按传统断法，此局我方处于一定劣势，宜考虑和解。',
+      '求职面试': '【求职面试】按传统断法，此局求职条件欠佳，暂时不太有利。',
+      '失物寻找': '【失物寻找】按传统断法，此局失物用神不力，寻回有一定困难。',
+      '体育竞猜': '【体育竞猜】按传统断法，此局主队处于一定劣势，客队略占优势。',
+    },
+    '大凶': {
+      '婚姻感情': '【婚姻感情】按传统断法，此局用神多处受克失令，婚姻感情阻碍较大，暂缓为宜。',
+      '求财经商': '【求财经商】按传统断法，此局用神多处受克失令，求财风险较高，宜守不宜攻。',
+      '考试求学': '【考试求学】按传统断法，此局用神多处受克失令，考运不佳，需加倍努力。',
+      '出行远行': '【出行远行】按传统断法，此局用神多处受克失令，出行不利，建议改期。',
+      '疾病健康': '【疾病健康】按传统断法，此局用神多处受克失令，病情较重，不可大意。',
+      '官讼诉讼': '【官讼诉讼】按传统断法，此局用神多处受克失令，我方劣势明显，宜和解调解。',
+      '求职面试': '【求职面试】按传统断法，此局用神多处受克失令，求职受阻，建议等待时机。',
+      '失物寻找': '【失物寻找】按传统断法，此局用神多处受克失令，失物难寻，寻回可能性低。',
+      '体育竞猜': '【体育竞猜】按传统断法，此局主队用神多处不利，客队胜面较大。',
+    },
   };
-  return map[eventType];
+  return statements[tier][eventType];
 }
 
-function getNegativeAdvice(eventType: EventTypeKey): string {
-  const map: Record<EventTypeKey, string> = {
-    '婚姻感情': '婚姻有阻，双方意见不合，暂缓为宜。',
-    '求财经商': '求财不利，投资有亏损风险，宜守不宜攻。',
-    '考试求学': '考运欠佳，准备可能不足，需加倍努力。',
-    '出行远行': '出行不利，路上恐有阻碍，建议改期。',
-    '疾病健康': '病情较重，需积极治疗，不可大意。',
-    '官讼诉讼': '诉讼不利，我方处于劣势，宜和解调解。',
-    '求职面试': '求职受阻，暂时不利，建议等待时机。',
-    '失物寻找': '失物难寻，可能已毁损或远离，寻找困难。',
-    '体育竞猜': '主队处于劣势，客队胜面较大。',
-  };
-  return map[eventType];
+/** 体育竞猜：主客队宫位对比 */
+function getSportComparisonLine(locations: YongShenLocation[]): string | null {
+  const home = locations.find(l => l.role.label === '主队');
+  const away = locations.find(l => l.role.label === '客队');
+  if (!home || !away || home.palace === null || away.palace === null) return null;
+
+  const homeDir = PALACE_DIRECTION[home.palace] ?? '';
+  const awayDir = PALACE_DIRECTION[away.palace] ?? '';
+
+  if (home.palace === away.palace) {
+    return `主客队同落${home.palaceName}，双方势均力敌，平局可能性较大。`;
+  }
+
+  const scoreDiff = home.score - away.score;
+  if (scoreDiff > 1) {
+    return `主队落${home.palaceName}(${homeDir})，状态优于客队落${away.palaceName}(${awayDir})，按传统断法利主队。`;
+  } else if (scoreDiff < -1) {
+    return `客队落${away.palaceName}(${awayDir})，状态优于主队落${home.palaceName}(${homeDir})，按传统断法利客队。`;
+  } else {
+    return `主队落${home.palaceName}(${homeDir})，客队落${away.palaceName}(${awayDir})，双方用神状态接近，胜负难判。`;
+  }
 }
 
-function getNeutralAdvice(eventType: EventTypeKey): string {
-  const map: Record<EventTypeKey, string> = {
-    '婚姻感情': '婚姻吉凶参半，需双方共同努力经营。',
-    '求财经商': '财运一般，有得有失，需谨慎操作。',
-    '考试求学': '考运平平，发挥不稳定，需做好充分准备。',
-    '出行远行': '出行可行但需注意安全，做好预案。',
-    '疾病健康': '病情反复，需耐心调养，按医嘱行事。',
-    '官讼诉讼': '诉讼胜负难料，建议多做准备。',
-    '求职面试': '求职有机会但竞争激烈，需展示优势。',
-    '失物寻找': '失物或可寻回，但需费些时间和精力。',
-    '体育竞猜': '双方实力接近，比赛胶着，平局可能性较大。',
-  };
-  return map[eventType];
+/** 主用神具体状态行（含方位建议） */
+function getKeyFactorLine(eventType: EventTypeKey, primary: YongShenLocation, direction: string): string {
+  const label = primary.role.label;
+  const fortuneDesc = primary.fortune === '吉' ? '得位有力' : primary.fortune === '凶' ? '受克失令' : '状态平平';
+  const dirHint = direction ? `，落宫方位在${direction}` : '';
+
+  return `主用神${label}（${primary.role.target}）落${primary.palaceName}，${fortuneDesc}${dirHint}。`;
 }
 
 // ─── 主函数 ──────────────────────────────────────────────────────────────────
@@ -284,7 +444,8 @@ export function analyzeYongShen(chart: QimenChart, eventType: EventTypeKey): Yon
 
   const locations = template.roles.map(role => locateYongShen(chart, role));
   const relations = analyzeRelations(locations);
-  const conclusion = generateConclusion(eventType, locations, relations);
+  const coherence = getCoherence(locations, relations);
+  const conclusion = generateConclusion(eventType, locations, relations, coherence);
 
-  return { eventType, locations, relations, conclusion };
+  return { eventType, locations, relations, conclusion, coherence };
 }
