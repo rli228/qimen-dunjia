@@ -242,6 +242,7 @@ function getPositiveAdvice(eventType: EventTypeKey): string {
     '官讼诉讼': '诉讼有利，我方占优，可积极应对。',
     '求职面试': '求职顺利，有贵人相助，利于入职。',
     '失物寻找': '失物可寻，注意用神落宫方位。',
+    '体育竞猜': '主队气势旺盛，利主队取胜。',
   };
   return map[eventType];
 }
@@ -256,6 +257,7 @@ function getNegativeAdvice(eventType: EventTypeKey): string {
     '官讼诉讼': '诉讼不利，我方处于劣势，宜和解调解。',
     '求职面试': '求职受阻，暂时不利，建议等待时机。',
     '失物寻找': '失物难寻，可能已毁损或远离，寻找困难。',
+    '体育竞猜': '主队处于劣势，客队胜面较大。',
   };
   return map[eventType];
 }
@@ -270,6 +272,7 @@ function getNeutralAdvice(eventType: EventTypeKey): string {
     '官讼诉讼': '诉讼胜负难料，建议多做准备。',
     '求职面试': '求职有机会但竞争激烈，需展示优势。',
     '失物寻找': '失物或可寻回，但需费些时间和精力。',
+    '体育竞猜': '双方实力接近，比赛胶着，平局可能性较大。',
   };
   return map[eventType];
 }

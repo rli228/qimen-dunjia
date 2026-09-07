@@ -23,7 +23,7 @@ export interface EventTemplate {
   analysisGuide: string;  // 分析要点
 }
 
-export type EventTypeKey = '婚姻感情' | '求财经商' | '考试求学' | '出行远行' | '疾病健康' | '官讼诉讼' | '求职面试' | '失物寻找';
+export type EventTypeKey = '婚姻感情' | '求财经商' | '考试求学' | '出行远行' | '疾病健康' | '官讼诉讼' | '求职面试' | '失物寻找' | '体育竞猜';
 
 export const EVENT_TEMPLATES: Record<EventTypeKey, EventTemplate> = {
   '婚姻感情': {
@@ -114,9 +114,21 @@ export const EVENT_TEMPLATES: Record<EventTypeKey, EventTemplate> = {
     ],
     analysisGuide: '戊落宫看失物所在方位。杜门所在宫位看藏匿处。戊落空亡则难寻。戊与值使门生合则可找回。',
   },
+  '体育竞猜': {
+    name: '体育竞猜',
+    icon: '⚽',
+    roles: [
+      { label: '主队', type: 'gan', target: '戊', description: '戊土代表主队（值符方）' },
+      { label: '客队', type: 'gan', target: '庚', description: '庚金代表客队（对手方）' },
+      { label: '赛事', type: 'gate', target: '开', description: '开门代表赛事开局、主动权' },
+      { label: '胜负', type: 'gate', target: '伤', description: '伤门主竞争、争斗、体育' },
+    ],
+    analysisGuide: '戊（主队）与庚（客队）落宫比较，宫旺者胜。伤门落宫看比赛激烈程度。戊宫克庚宫则主队胜，反之客队胜。两宫比和或同宫则平局可能大。开门得奇利主队。',
+  },
 };
 
 export const EVENT_TYPE_KEYS: EventTypeKey[] = [
   '婚姻感情', '求财经商', '考试求学', '出行远行',
   '疾病健康', '官讼诉讼', '求职面试', '失物寻找',
+  '体育竞猜',
 ];
