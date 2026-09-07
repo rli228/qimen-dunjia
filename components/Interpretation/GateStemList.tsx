@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import type { GanInteraction } from '@/lib/qimen/types';
+import type { GateStemResult } from '@/lib/qimen/interpretation/interpreter';
 
 interface Props {
-  interactions: GanInteraction[];
+  items: GateStemResult[];
 }
 
 const fortuneColor = {
@@ -13,32 +13,31 @@ const fortuneColor = {
   '平': 'text-qimen-text-secondary',
 };
 
-export function GanInteractionTable({ interactions }: Props) {
+export function GateStemList({ items }: Props) {
   const [expanded, setExpanded] = useState<number | null>(null);
 
   return (
     <div>
-      <h3 className="mb-3 text-sm font-semibold">十干克应</h3>
+      <h3 className="mb-3 text-sm font-semibold">门加三奇六仪</h3>
       <div className="space-y-1.5">
-        {interactions.map((gi, i) => (
+        {items.map((item, i) => (
           <div key={i}>
             <button
               onClick={() => setExpanded(expanded === i ? null : i)}
               className="flex w-full items-center justify-between rounded-md bg-qimen-bg px-3 py-2 text-sm text-left hover:bg-qimen-bg/80 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <span className="tian-gan-color font-medium">{gi.tianGan}</span>
+                <span className="font-medium">{item.gate}门</span>
                 <span className="text-qimen-text-secondary">+</span>
-                <span className="di-gan-color font-medium">{gi.diGan}</span>
-                <span className="text-qimen-text-secondary">= {gi.name}</span>
+                <span className="font-medium">{item.stem}</span>
               </div>
-              <span className={`text-xs font-medium ${fortuneColor[gi.fortune]}`}>
-                {gi.fortune}
+              <span className={`text-xs font-medium ${fortuneColor[item.fortune]}`}>
+                {item.fortune}
               </span>
             </button>
             {expanded === i && (
               <div className="ml-3 mt-1 mb-2 rounded-md bg-qimen-surface px-3 py-2 text-xs text-qimen-text-secondary">
-                {gi.meaning}
+                {item.meaning}
               </div>
             )}
           </div>
