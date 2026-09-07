@@ -6,6 +6,8 @@ import { interpretChart } from '@/lib/qimen/interpretation/index';
 import { GanInteractionTable } from './GanInteractionTable';
 import { PatternList } from './PatternList';
 import { GateVitalityRow } from './GateVitalityRow';
+import { GatePalaceList } from './GatePalaceList';
+import { GateStemList } from './GateStemList';
 
 interface Props {
   chart: QimenChart;
@@ -21,6 +23,8 @@ export function InterpretationPanel({ chart }: Props) {
       <PatternList patterns={result.patterns} />
       <GateVitalityRow vitality={result.gateVitality} />
       <GanInteractionTable interactions={result.ganInteractions} />
+      <GatePalaceList items={result.gatePalace} />
+      <GateStemList items={result.gateStem} />
     </div>
   );
 }

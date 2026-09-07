@@ -8,6 +8,7 @@ import { lookupGanInteraction } from './data/ganInteractions';
 import { GATE_WUXING, JIEQI_WUXING, getVitality, type Vitality } from './data/gateWuxing';
 import { AUSPICIOUS_PATTERNS } from './data/patternsAuspicious';
 import { INAUSPICIOUS_PATTERNS } from './data/patternsInauspicious';
+import { GATE_PALACE_DATA, GATE_STEM_DATA } from './data/gateInteractions';
 
 // ─── 结果类型 ────────────────────────────────────────────────────────────────
 
@@ -17,10 +18,29 @@ export interface GateVitalityResult {
   vitality: Vitality;
 }
 
+export interface GatePalaceResult {
+  gate: Exclude<GateName, '中'>;
+  palace: PalaceIndex;
+  palaceName: string;
+  relation: string;
+  fortune: '吉' | '凶' | '平';
+  meaning: string;
+}
+
+export interface GateStemResult {
+  gate: Exclude<GateName, '中'>;
+  stem: string;
+  palace: PalaceIndex;
+  fortune: '吉' | '凶' | '平';
+  meaning: string;
+}
+
 export interface InterpretationResult {
   ganInteractions: GanInteraction[];
   patterns: Pattern[];
   gateVitality: GateVitalityResult[];
+  gatePalace: GatePalaceResult[];
+  gateStem: GateStemResult[];
 }
 
 // ─── 十干克应检测 ────────────────────────────────────────────────────────────
@@ -93,6 +113,54 @@ function getGateVitality(chart: QimenChart): GateVitalityResult[] {
   return results;
 }
 
+// ─── 八门落宫克应 ──────────────────────────────────────────────────────────
+
+function getGatePalaceInteractions(chart: QimenChart): GatePalaceResult[] {
+  const results: GatePalaceResult[] = [];
+  for (let i = 1; i <= 9; i++) {
+    const palaceIdx = i as PalaceIndex;
+    if (palaceIdx === 5) continue;
+    const palace = chart.palaces[palaceIdx];
+    const key = `${palace.gate}_${palaceIdx}`;
+    const data = GATE_PALACE_DATA[key];
+    if (data) {
+      results.push({
+        gate: palace.gate,
+        palace: palaceIdx,
+        palaceName: data.palaceName,
+        relation: data.relation,
+        fortune: data.fortune,
+        meaning: data.meaning,
+      });
+    }
+  }
+  return results;
+}
+
+// ─── 门加三奇六仪 ──────────────────────────────────────────────────────────
+
+function getGateStemInteractions(chart: QimenChart): GateStemResult[] {
+  const results: GateStemResult[] = [];
+  for (let i = 1; i <= 9; i++) {
+    const palaceIdx = i as PalaceIndex;
+    if (palaceIdx === 5) continue;
+    const palace = chart.palaces[palaceIdx];
+    // 门 + 天盘干
+    const key = `${palace.gate}_${palace.tianPanGan}`;
+    const data = GATE_STEM_DATA[key];
+    if (data) {
+      results.push({
+        gate: palace.gate,
+        stem: palace.tianPanGan,
+        palace: palaceIdx,
+        fortune: data.fortune,
+        meaning: data.meaning,
+      });
+    }
+  }
+  return results;
+}
+
 // ─── 主函数 ──────────────────────────────────────────────────────────────────
 
 export function interpretChart(chart: QimenChart): InterpretationResult {
@@ -100,5 +168,7 @@ export function interpretChart(chart: QimenChart): InterpretationResult {
     ganInteractions: getGanInteractions(chart),
     patterns: detectPatterns(chart),
     gateVitality: getGateVitality(chart),
+    gatePalace: getGatePalaceInteractions(chart),
+    gateStem: getGateStemInteractions(chart),
   };
 }

@@ -7,7 +7,7 @@
 import type { QimenChart, Pattern, GanInteraction } from '../types';
 import type { PalaceIndex } from '../constants';
 import { PALACE_NAMES, PALACE_WUXING, GATE_FORTUNE, STAR_FORTUNE } from '../constants';
-import type { InterpretationResult, GateVitalityResult } from './interpreter';
+import type { InterpretationResult, GateVitalityResult, GatePalaceResult, GateStemResult } from './interpreter';
 
 interface TextSection {
   title: string;
@@ -28,6 +28,8 @@ export function generateInterpretationText(
   sections.push(buildPatternSection(result.patterns));
   sections.push(buildKeyGanInteractions(result.ganInteractions));
   sections.push(buildGateVitalitySection(result.gateVitality));
+  sections.push(buildGatePalaceSection(result.gatePalace));
+  sections.push(buildGateStemSection(result.gateStem));
   sections.push(buildSummary(chart, result));
 
   return sections;
@@ -188,6 +190,74 @@ function buildGateVitalitySection(vitality: GateVitalityResult[]): TextSection {
   return { title: '八门状态', content: lines.join('\n') };
 }
 
+// ─── 八门落宫克应 ──────────────────────────────────────────────────────────
+
+function buildGatePalaceSection(gatePalace: GatePalaceResult[]): TextSection {
+  if (gatePalace.length === 0) {
+    return { title: '八门落宫', content: '无八门落宫数据。' };
+  }
+
+  const ji = gatePalace.filter(gp => gp.fortune === '吉');
+  const xiong = gatePalace.filter(gp => gp.fortune === '凶');
+
+  const lines: string[] = [];
+
+  if (ji.length > 0) {
+    lines.push('吉利落宫：');
+    for (const gp of ji) {
+      lines.push(`• ${gp.gate}门入${gp.palaceName}（${gp.relation}）— ${gp.meaning}`);
+    }
+  }
+
+  if (xiong.length > 0) {
+    if (ji.length > 0) lines.push('');
+    lines.push('不利落宫：');
+    for (const gp of xiong) {
+      lines.push(`• ${gp.gate}门入${gp.palaceName}（${gp.relation}）— ${gp.meaning}`);
+    }
+  }
+
+  if (ji.length === 0 && xiong.length === 0) {
+    lines.push('八门落宫克应均为中平，无特别显著吉凶。');
+  }
+
+  return { title: '八门落宫', content: lines.join('\n') };
+}
+
+// ─── 门加三奇六仪 ──────────────────────────────────────────────────────────
+
+function buildGateStemSection(gateStem: GateStemResult[]): TextSection {
+  if (gateStem.length === 0) {
+    return { title: '门加三奇六仪', content: '无门加干数据。' };
+  }
+
+  const ji = gateStem.filter(gs => gs.fortune === '吉');
+  const xiong = gateStem.filter(gs => gs.fortune === '凶');
+
+  const lines: string[] = [];
+
+  if (ji.length > 0) {
+    lines.push('吉利组合：');
+    for (const gs of ji) {
+      lines.push(`• ${gs.gate}门+${gs.stem}（${PALACE_NAMES[gs.palace - 1]}${gs.palace}宫）— ${gs.meaning}`);
+    }
+  }
+
+  if (xiong.length > 0) {
+    if (ji.length > 0) lines.push('');
+    lines.push('不利组合：');
+    for (const gs of xiong) {
+      lines.push(`• ${gs.gate}门+${gs.stem}（${PALACE_NAMES[gs.palace - 1]}${gs.palace}宫）— ${gs.meaning}`);
+    }
+  }
+
+  if (ji.length === 0 && xiong.length === 0) {
+    lines.push('门加三奇六仪组合均为中平。');
+  }
+
+  return { title: '门加三奇六仪', content: lines.join('\n') };
+}
+
 // ─── 综合判断 ────────────────────────────────────────────────────────────────
 
 function buildSummary(chart: QimenChart, result: InterpretationResult): TextSection {
@@ -205,6 +275,18 @@ function buildSummary(chart: QimenChart, result: InterpretationResult): TextSect
   const xiongGan = result.ganInteractions.filter(gi => gi.fortune === '凶').length;
   score += jiGan;
   score -= xiongGan;
+
+  // 门落宫加分
+  const jiGatePalace = result.gatePalace.filter(gp => gp.fortune === '吉').length;
+  const xiongGatePalace = result.gatePalace.filter(gp => gp.fortune === '凶').length;
+  score += jiGatePalace;
+  score -= xiongGatePalace;
+
+  // 门加干加分
+  const jiGateStem = result.gateStem.filter(gs => gs.fortune === '吉').length;
+  const xiongGateStem = result.gateStem.filter(gs => gs.fortune === '凶').length;
+  score += jiGateStem;
+  score -= xiongGateStem;
 
   // 值符值使加分
   const starF = STAR_FORTUNE[chart.zhiFu];
