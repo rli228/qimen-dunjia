@@ -17,7 +17,7 @@ export default function HomePage() {
   const [mode, setMode] = useState<'question' | 'manual'>('question');
 
   // 问事起盘：用当前时间自动排盘
-  const handleQuestion = (q: string) => {
+  const handleQuestion = (q: string, method: '拆补法' | '置闰法') => {
     try {
       setError(null);
       const now = new Date();
@@ -27,6 +27,7 @@ export default function HomePage() {
         day: now.getDate(),
         hour: now.getHours(),
         minute: now.getMinutes(),
+        method,
       };
       const result = generateChart(input);
       setChart(result);
@@ -55,7 +56,7 @@ export default function HomePage() {
       <div className="text-center">
         <h1 className="text-2xl font-bold text-qimen-gold">奇门遁甲排盘</h1>
         <p className="mt-1 text-sm text-qimen-text-secondary">
-          时家奇门 · 拆补法 · 转盘
+          时家奇门 · 转盘
         </p>
       </div>
 

@@ -3,17 +3,18 @@
 import { useState } from 'react';
 
 interface QuestionInputProps {
-  onSubmit: (question: string) => void;
+  onSubmit: (question: string, method: '拆补法' | '置闰法') => void;
 }
 
 export function QuestionInput({ onSubmit }: QuestionInputProps) {
   const [question, setQuestion] = useState('');
+  const [method, setMethod] = useState<'拆补法' | '置闰法'>('拆补法');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const q = question.trim();
     if (!q) return;
-    onSubmit(q);
+    onSubmit(q, method);
   };
 
   return (
@@ -30,6 +31,25 @@ export function QuestionInput({ onSubmit }: QuestionInputProps) {
         rows={3}
         className="mb-4 w-full resize-none rounded-lg border border-qimen-border bg-qimen-bg px-4 py-3 text-sm leading-relaxed placeholder:text-qimen-text-secondary/50"
       />
+
+      {/* 定局方法 */}
+      <div className="mb-4 flex items-center gap-3">
+        <span className="text-xs text-qimen-text-secondary">定局法：</span>
+        {(['拆补法', '置闰法'] as const).map(m => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMethod(m)}
+            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+              method === m
+                ? 'bg-qimen-gold text-white'
+                : 'bg-qimen-bg text-qimen-text-secondary hover:text-qimen-text'
+            }`}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
 
       <button
         type="submit"

@@ -19,6 +19,7 @@ export interface ChartInput {
   hour: number;
   minute: number;
   isLunar?: boolean; // 是否农历输入，默认公历
+  method?: '拆补法' | '置闰法'; // 定局方法，默认拆补法
 }
 
 // ─── 四柱 ────────────────────────────────────────────────────────────────────

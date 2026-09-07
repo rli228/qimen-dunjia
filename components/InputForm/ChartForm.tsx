@@ -14,10 +14,11 @@ export function ChartForm({ onSubmit }: ChartFormProps) {
   const [day, setDay] = useState(now.getDate());
   const [hour, setHour] = useState(now.getHours());
   const [minute, setMinute] = useState(now.getMinutes());
+  const [method, setMethod] = useState<'拆补法' | '置闰法'>('拆补法');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ year, month, day, hour, minute });
+    onSubmit({ year, month, day, hour, minute, method });
   };
 
   const handleNow = () => {
@@ -89,6 +90,25 @@ export function ChartForm({ onSubmit }: ChartFormProps) {
         </div>
       </div>
 
+      {/* 定局方法 */}
+      <div className="mb-4 flex items-center gap-3">
+        <span className="text-xs text-qimen-text-secondary">定局法：</span>
+        {(['拆补法', '置闰法'] as const).map(m => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMethod(m)}
+            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+              method === m
+                ? 'bg-qimen-gold text-white'
+                : 'bg-qimen-bg text-qimen-text-secondary hover:text-qimen-text'
+            }`}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+
       <div className="flex gap-3">
         <button
           type="submit"
@@ -106,7 +126,7 @@ export function ChartForm({ onSubmit }: ChartFormProps) {
       </div>
 
       <p className="mt-3 text-xs text-qimen-text-secondary">
-        时家奇门 · 拆补法 · 转盘
+        时家奇门 · {method} · 转盘
       </p>
     </form>
   );

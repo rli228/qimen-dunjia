@@ -126,18 +126,35 @@ export function getDunType(jieQi: JieQi): '阳遁' | '阴遁' {
   throw new Error(`未知节气: ${jieQi}`);
 }
 
-// ─── 拆补法定局 ──────────────────────────────────────────────────────────────
+// ─── 定局（拆补法 / 置闰法） ─────────────────────────────────────────────────
 
 /**
- * 使用拆补法确定上中下三元及局数
- *
- * 拆补法核心逻辑：
- * 1. 找到当前节气开始后的第一个甲/己日（符头），作为上元起始
- * 2. 每元5天（一旬前半），三元共15天
- * 3. 如果当前日期在符头之前（节气开始后、符头之前），使用上个节气的局数（"拆"）
- * 4. 如果当前日期在符头之后，按正常三元计算（"补"）
+ * 根据定局方法分发
  */
 export function getYuanAndJu(input: ChartInput, jieQiInfo: JieQiInfo): {
+  yuan: '上元' | '中元' | '下元';
+  juNumber: number;
+  dunType: '阳遁' | '阴遁';
+} {
+  const method = input.method || '拆补法';
+  return method === '置闰法'
+    ? getYuanAndJuZhiRun(input, jieQiInfo)
+    : getYuanAndJuChaiBu(input, jieQiInfo);
+}
+
+/**
+ * 拆补法定局
+ *
+ * 核心逻辑：
+ * 1. 找到当天所在旬的旬首（甲日），即符头
+ * 2. 根据旬首地支分类确定三元：
+ *    - 子午卯酉 → 上元
+ *    - 寅申巳亥 → 中元
+ *    - 辰戌丑未 → 下元
+ * 3. "拆"：旬跨节气时，节气前后各用各自节气的局数
+ *    "补"：自然由节气归属处理
+ */
+function getYuanAndJuChaiBu(input: ChartInput, jieQiInfo: JieQiInfo): {
   yuan: '上元' | '中元' | '下元';
   juNumber: number;
   dunType: '阳遁' | '阴遁';
@@ -147,13 +164,50 @@ export function getYuanAndJu(input: ChartInput, jieQiInfo: JieQiInfo): {
     : Solar.fromYmdHms(input.year, input.month, input.day, input.hour, input.minute, 0);
 
   const lunar = solar.getLunar();
-  const dayGanZhiIndex = getGanZhiIndex(
-    lunar.getDayGanExact() as TianGan,
-    lunar.getDayZhiExact() as DiZhi
-  );
+  const dayGan = lunar.getDayGanExact() as TianGan;
+  const dayZhi = lunar.getDayZhiExact() as DiZhi;
+  const ganIndex = getGanIndex(dayGan);
+  const zhiIndex = getZhiIndex(dayZhi);
 
-  // 找到当前节气之后的第一个符头（甲或己日, 即天干序号 % 5 === 0 或 === 5）
-  // 符头是甲日或己日，即上元的第一天
+  // 旬首地支：从当天回退 ganIndex 天到甲日
+  const xunShouZhiIndex = ((zhiIndex - ganIndex) % 12 + 12) % 12;
+  const xunShouZhi = DI_ZHI[xunShouZhiIndex];
+
+  // 根据旬首地支确定三元
+  const SHANG_YUAN_ZHI = ['子', '午', '卯', '酉'];
+  const ZHONG_YUAN_ZHI = ['寅', '申', '巳', '亥'];
+  // 辰戌丑未 → 下元
+
+  let yuan: '上元' | '中元' | '下元';
+  if (SHANG_YUAN_ZHI.includes(xunShouZhi)) {
+    yuan = '上元';
+  } else if (ZHONG_YUAN_ZHI.includes(xunShouZhi)) {
+    yuan = '中元';
+  } else {
+    yuan = '下元';
+  }
+
+  return lookupJu(jieQiInfo.current, yuan);
+}
+
+/**
+ * 置闰法定局
+ *
+ * 核心逻辑：
+ * 1. 找到节气当天或之前最近的旬首（甲日），即符头
+ * 2. 从符头起：第0-4天=上元，第5-9天=中元，第10-14天=下元
+ * 3. 第15天及以后（闰奇）= 使用下一节气上元局数
+ */
+function getYuanAndJuZhiRun(input: ChartInput, jieQiInfo: JieQiInfo): {
+  yuan: '上元' | '中元' | '下元';
+  juNumber: number;
+  dunType: '阳遁' | '阴遁';
+} {
+  const solar = input.isLunar
+    ? Lunar.fromYmdHms(input.year, input.month, input.day, input.hour, input.minute, 0).getSolar()
+    : Solar.fromYmdHms(input.year, input.month, input.day, input.hour, input.minute, 0);
+
+  const lunar = solar.getLunar();
   const dayGan = lunar.getDayGanExact() as TianGan;
   const ganIndex = getGanIndex(dayGan);
 
@@ -166,43 +220,48 @@ export function getYuanAndJu(input: ChartInput, jieQiInfo: JieQiInfo): {
   );
   const daysSinceJieQi = Math.floor((inputDate.getTime() - jieQiDate.getTime()) / (24 * 60 * 60 * 1000));
 
-  // 计算当前日在旬中的位置（0-9，甲为0，己为5）
-  // 符头位置：距离上一个甲/己日的天数
-  const daysFromFuTou = ganIndex % 5; // 距上一个符头的天数
+  // 节气起始日的天干序号
+  const jieQiGanIndex = ((ganIndex - daysSinceJieQi) % 10 + 10) % 10;
 
-  // 符头距节气的天数
-  const fuTouDaysSinceJieQi = daysSinceJieQi - daysFromFuTou;
+  // 节气日距符头（甲日/旬首）的天数
+  // 甲=0, 所以 jieQiGanIndex 本身就是距前一个甲日的天数
+  const daysIntoXun = jieQiGanIndex;
+
+  // 当前日期距符头（甲日）的天数
+  const daysSinceFuTou = daysSinceJieQi + daysIntoXun;
 
   let yuan: '上元' | '中元' | '下元';
   let currentJieQi = jieQiInfo.current;
 
-  if (fuTouDaysSinceJieQi < 0) {
-    // "拆"的情况：符头在节气之前，说明当前用的是上个节气的尾元
-    // 需要使用上一个节气的局数
-    currentJieQi = getPrevJieQi(jieQiInfo.current);
-
-    // 计算在上个节气中应属于哪一元
-    // 这里简化处理：符头在节气前，取上个节气的下元
+  if (daysSinceFuTou < 5) {
+    yuan = '上元';
+  } else if (daysSinceFuTou < 10) {
+    yuan = '中元';
+  } else if (daysSinceFuTou < 15) {
     yuan = '下元';
   } else {
-    // 正常情况或"补"的情况
-    // 根据符头距节气的天数确定三元
-    const fuTouOrder = Math.floor(fuTouDaysSinceJieQi / 5);
-    if (fuTouOrder === 0) {
-      yuan = '上元';
-    } else if (fuTouOrder === 1) {
-      yuan = '中元';
-    } else {
-      yuan = '下元';
-    }
+    // 闰奇：三元已过，使用下一节气上元局数
+    currentJieQi = jieQiInfo.next;
+    yuan = '上元';
   }
 
-  const dunType = getDunType(currentJieQi);
+  return lookupJu(currentJieQi, yuan);
+}
+
+/**
+ * 根据节气和三元查表取局数
+ */
+function lookupJu(jieQi: JieQi, yuan: '上元' | '中元' | '下元'): {
+  yuan: '上元' | '中元' | '下元';
+  juNumber: number;
+  dunType: '阳遁' | '阴遁';
+} {
+  const dunType = getDunType(jieQi);
   const juTable = dunType === '阳遁' ? YANG_DUN_JU : YIN_DUN_JU;
-  const juArray = juTable[currentJieQi];
+  const juArray = juTable[jieQi];
 
   if (!juArray) {
-    throw new Error(`节气 ${currentJieQi} 无对应局数`);
+    throw new Error(`节气 ${jieQi} 无对应局数`);
   }
 
   const yuanIndex = yuan === '上元' ? 0 : yuan === '中元' ? 1 : 2;
@@ -230,6 +289,7 @@ import { XUN_SHOU } from './constants';
 export function getXunShouInfo(hourGan: TianGan, hourZhi: DiZhi): {
   xunShou: string;
   kongWang: DiZhi[];
+  xunShouYi: string;
 } {
   const ganIdx = getGanIndex(hourGan);
   const zhiIdx = getZhiIndex(hourZhi);
@@ -247,5 +307,6 @@ export function getXunShouInfo(hourGan: TianGan, hourZhi: DiZhi): {
   return {
     xunShou: found.ganZhi,
     kongWang: [...found.kongWang],
+    xunShouYi: found.yiName,
   };
 }
