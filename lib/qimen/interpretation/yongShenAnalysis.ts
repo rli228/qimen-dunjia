@@ -193,6 +193,36 @@ function locateYongShen(chart: QimenChart, role: YongShenRole): YongShenLocation
     }
   }
 
+  // Fix 1: 宫位月令旺衰（宫位五行 vs 季节五行，权重较高）
+  {
+    const seasonWx = JIEQI_WUXING[chart.jieQi];
+    if (seasonWx) {
+      const palaceVitality = getVitality(palaceWx, seasonWx);
+      if (palaceVitality === '旺') {
+        factors.push('宫旺');
+        fortuneScore += 2;
+      } else if (palaceVitality === '相') {
+        factors.push('宫相');
+        fortuneScore += 1;
+      } else if (palaceVitality === '囚') {
+        factors.push('宫囚');
+        fortuneScore -= 1;
+      } else if (palaceVitality === '死') {
+        factors.push('宫死');
+        fortuneScore -= 2;
+      }
+    }
+  }
+
+  // Fix 3: 值符同宫（值符星与用神同宫，得裁判/权威助力）
+  {
+    const zhiFuStar = chart.zhiFu;
+    if (palace.star === zhiFuStar) {
+      factors.push('值符同宫');
+      fortuneScore += 1;
+    }
+  }
+
   // 有无三奇（乙丙丁）
   const sanQi = ['乙', '丙', '丁'];
   if (sanQi.includes(palace.tianPanGan)) {
@@ -263,6 +293,7 @@ function getCoherence(locations: YongShenLocation[], relations: YongShenRelation
 type Tier = '大吉' | '小吉' | '平' | '小凶' | '大凶';
 
 function generateConclusion(
+  chart: QimenChart,
   eventType: EventTypeKey,
   locations: YongShenLocation[],
   relations: YongShenRelation[],
@@ -296,9 +327,26 @@ function generateConclusion(
     const home = locations.find(l => l.role.label === '主队');
     const away = locations.find(l => l.role.label === '客队');
     if (home && away && home.palace !== null && away.palace !== null) {
-      const diff = home.score - away.score;
-      // 映射到 [-1, 1]：diff 范围大约 -6~+6
-      normalized = Math.max(-1, Math.min(1, diff / 5));
+      let diff = home.score - away.score;
+
+      // Fix 2: 辛双盘比较加分
+      let diPanXinPalace: PalaceIndex | null = null;
+      let tianPanXinPalace: PalaceIndex | null = null;
+      for (let i = 1; i <= 9; i++) {
+        const idx = i as PalaceIndex;
+        const p = chart.palaces[idx];
+        if (!diPanXinPalace && p.diPanGan === '辛') diPanXinPalace = idx;
+        if (!tianPanXinPalace && p.tianPanGan === '辛') tianPanXinPalace = idx;
+      }
+      if (diPanXinPalace && tianPanXinPalace && diPanXinPalace !== tianPanXinPalace) {
+        const diWx = PALACE_WUXING[diPanXinPalace];
+        const tianWx = PALACE_WUXING[tianPanXinPalace];
+        if (KE[diWx] === tianWx) diff += 2;        // 地盘辛克天盘辛→利主队
+        else if (KE[tianWx] === diWx) diff -= 2;   // 天盘辛克地盘辛→利客队
+      }
+
+      // 映射到 [-1, 1]：diff 范围大约 -8~+8
+      normalized = Math.max(-1, Math.min(1, diff / 6));
     }
   }
 
@@ -324,6 +372,9 @@ function generateConclusion(
   if (eventType === '体育竞猜') {
     const sportLine = getSportComparisonLine(locations);
     if (sportLine) lines.push(sportLine);
+    // Fix 2: 辛双盘比较
+    const xinLine = getXinDualComparison(chart);
+    if (xinLine) lines.push(xinLine);
   } else if (primary) {
     const dir = PALACE_DIRECTION[primary.palace!] ?? '';
     lines.push(getKeyFactorLine(eventType, primary, dir));
@@ -435,6 +486,38 @@ function getSportComparisonLine(locations: YongShenLocation[]): string | null {
   }
 }
 
+/** Fix 2: 辛（金牌）双盘比较 — 地盘辛 vs 天盘辛，宫位五行谁强 */
+function getXinDualComparison(chart: QimenChart): string | null {
+  let diPanXinPalace: PalaceIndex | null = null;
+  let tianPanXinPalace: PalaceIndex | null = null;
+
+  for (let i = 1; i <= 9; i++) {
+    const idx = i as PalaceIndex;
+    const p = chart.palaces[idx];
+    if (!diPanXinPalace && p.diPanGan === '辛') diPanXinPalace = idx;
+    if (!tianPanXinPalace && p.tianPanGan === '辛') tianPanXinPalace = idx;
+  }
+
+  if (!diPanXinPalace || !tianPanXinPalace) return null;
+  if (diPanXinPalace === tianPanXinPalace) return `辛（金牌）天地盘同落${PALACE_NAMES[diPanXinPalace - 1]}${diPanXinPalace}宫，双方均有机会。`;
+
+  const diWx = PALACE_WUXING[diPanXinPalace];
+  const tianWx = PALACE_WUXING[tianPanXinPalace];
+
+  // 地盘辛=主队荣誉，天盘辛=客队荣誉
+  // 地盘辛宫克天盘辛宫 → 主队夺冠
+  if (KE[diWx] === tianWx) {
+    return `辛（金牌）地盘在${diPanXinPalace}宫(${diWx})克天盘${tianPanXinPalace}宫(${tianWx})，按传统断法主队夺冠。`;
+  } else if (KE[tianWx] === diWx) {
+    return `辛（金牌）天盘在${tianPanXinPalace}宫(${tianWx})克地盘${diPanXinPalace}宫(${diWx})，按传统断法客队夺冠。`;
+  } else if (SHENG[diWx] === tianWx) {
+    return `辛（金牌）地盘${diPanXinPalace}宫(${diWx})生天盘${tianPanXinPalace}宫(${tianWx})，主队荣誉泄于客队。`;
+  } else if (SHENG[tianWx] === diWx) {
+    return `辛（金牌）天盘${tianPanXinPalace}宫(${tianWx})生地盘${diPanXinPalace}宫(${diWx})，客队荣誉泄于主队，利主队。`;
+  }
+  return `辛（金牌）地盘在${diPanXinPalace}宫(${diWx})，天盘在${tianPanXinPalace}宫(${tianWx})，比和。`;
+}
+
 /** 主用神具体状态行（含方位建议） */
 function getKeyFactorLine(eventType: EventTypeKey, primary: YongShenLocation, direction: string): string {
   const label = primary.role.label;
@@ -452,7 +535,7 @@ export function analyzeYongShen(chart: QimenChart, eventType: EventTypeKey): Yon
   const locations = template.roles.map(role => locateYongShen(chart, role));
   const relations = analyzeRelations(locations);
   const coherence = getCoherence(locations, relations);
-  const conclusion = generateConclusion(eventType, locations, relations, coherence);
+  const conclusion = generateConclusion(chart, eventType, locations, relations, coherence);
 
   return { eventType, locations, relations, conclusion, coherence };
 }
