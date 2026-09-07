@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import type { QimenChart } from '@/lib/qimen/types';
 import { EVENT_TYPE_KEYS, type EventTypeKey } from '@/lib/qimen/interpretation/data/yongShen';
 import { analyzeYongShen } from '@/lib/qimen/interpretation/yongShenAnalysis';
@@ -76,10 +77,11 @@ export function YongShenPanel({ chart, defaultEventType }: Props) {
             </div>
           </div>
 
-          {/* 用神定位 */}
-          <div>
-            <h3 className="mb-2 text-sm font-semibold">用神定位</h3>
+          {/* 用神详情（可折叠） */}
+          <CollapsibleSection title="用神详情" titleClass="text-sm font-semibold text-qimen-text">
+            {/* 用神定位 */}
             <div className="space-y-2">
+              <h4 className="text-xs font-medium text-qimen-text-secondary">用神定位</h4>
               {result.locations.map((loc, i) => (
                 <div key={i} className="rounded-lg bg-qimen-bg px-4 py-3">
                   <div className="flex items-center gap-2 mb-1">
@@ -97,13 +99,11 @@ export function YongShenPanel({ chart, defaultEventType }: Props) {
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* 用神关系 */}
-          {result.relations.length > 0 && (
-            <div>
-              <h3 className="mb-2 text-sm font-semibold">用神关系</h3>
-              <div className="space-y-1.5">
+            {/* 用神关系 */}
+            {result.relations.length > 0 && (
+              <div className="mt-4 space-y-1.5">
+                <h4 className="text-xs font-medium text-qimen-text-secondary">用神关系</h4>
                 {result.relations.map((rel, i) => (
                   <div key={i} className="flex items-center gap-2 rounded-md bg-qimen-bg px-4 py-2 text-sm">
                     <span className="font-medium">{rel.from}</span>
@@ -116,8 +116,8 @@ export function YongShenPanel({ chart, defaultEventType }: Props) {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </CollapsibleSection>
         </div>
       )}
 

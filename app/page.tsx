@@ -8,6 +8,7 @@ import { AiPanel } from '@/components/Interpretation/AiPanel';
 import { YongShenPanel } from '@/components/Interpretation/YongShenPanel';
 import { QuestionInput } from '@/components/InputForm/QuestionInput';
 import { ChartForm } from '@/components/InputForm/ChartForm';
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { generateChart } from '@/lib/qimen/algorithm';
 import type { ChartInput, QimenChart } from '@/lib/qimen/types';
 
@@ -104,11 +105,17 @@ export default function HomePage() {
           <div className="mx-auto max-w-md">
             <NinePalaceGrid chart={chart} />
           </div>
-          <div className="mx-auto max-w-2xl space-y-6">
-            <RuleInterpretation chart={chart} question={question} />
+          <div className="mx-auto max-w-2xl space-y-4">
             <YongShenPanel chart={chart} />
-            <InterpretationPanel chart={chart} />
-            <AiPanel chart={chart} question={question} />
+            <CollapsibleSection title="规则解盘">
+              <RuleInterpretation chart={chart} question={question} bare />
+            </CollapsibleSection>
+            <CollapsibleSection title="解盘分析">
+              <InterpretationPanel chart={chart} bare />
+            </CollapsibleSection>
+            <CollapsibleSection title="AI 辅助解盘">
+              <AiPanel chart={chart} question={question} bare />
+            </CollapsibleSection>
           </div>
         </>
       )}

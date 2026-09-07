@@ -11,14 +11,15 @@ import { GateStemList } from './GateStemList';
 
 interface Props {
   chart: QimenChart;
+  bare?: boolean;
 }
 
-export function InterpretationPanel({ chart }: Props) {
+export function InterpretationPanel({ chart, bare }: Props) {
   const result = useMemo(() => interpretChart(chart), [chart]);
 
   return (
-    <div className="rounded-xl border border-qimen-border bg-qimen-surface p-6 space-y-6">
-      <h2 className="text-lg font-bold text-qimen-gold">解盘分析</h2>
+    <div className={bare ? 'space-y-6' : 'rounded-xl border border-qimen-border bg-qimen-surface p-6 space-y-6'}>
+      {!bare && <h2 className="text-lg font-bold text-qimen-gold">解盘分析</h2>}
 
       <PatternList patterns={result.patterns} />
       <GateVitalityRow vitality={result.gateVitality} />

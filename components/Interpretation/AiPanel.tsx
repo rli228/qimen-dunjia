@@ -11,6 +11,7 @@ import type { EventType } from '@/lib/ai/buildPrompt';
 interface Props {
   chart: QimenChart;
   question?: string;
+  bare?: boolean;
 }
 
 const PROVIDERS: { value: AiProvider; label: string; hint: string; placeholder: string }[] = [
@@ -18,7 +19,7 @@ const PROVIDERS: { value: AiProvider; label: string; hint: string; placeholder: 
   { value: 'anthropic', label: 'Claude (付费)', hint: '需要 Anthropic API Key', placeholder: 'sk-ant-...' },
 ];
 
-export function AiPanel({ chart, question }: Props) {
+export function AiPanel({ chart, question, bare }: Props) {
   const [provider, setProvider] = useState<AiProvider>('gemini');
   const { token, setToken, isValid } = useApiKey(provider);
   const { state, beginnerMode, setBeginnerMode, start, stop } = useAiInterpretation(chart, token, provider);
@@ -49,8 +50,8 @@ export function AiPanel({ chart, question }: Props) {
   const currentProvider = PROVIDERS.find(p => p.value === provider)!;
 
   return (
-    <div className="rounded-xl border border-qimen-border bg-qimen-surface p-6 space-y-4">
-      <h2 className="text-lg font-bold text-qimen-gold">AI 辅助解盘</h2>
+    <div className={bare ? 'space-y-4' : 'rounded-xl border border-qimen-border bg-qimen-surface p-6 space-y-4'}>
+      {!bare && <h2 className="text-lg font-bold text-qimen-gold">AI 辅助解盘</h2>}
 
       {/* 用户问题展示 */}
       {question && (

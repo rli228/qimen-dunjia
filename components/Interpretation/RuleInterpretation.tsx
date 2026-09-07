@@ -8,17 +8,18 @@ import { generateInterpretationText } from '@/lib/qimen/interpretation/textGener
 interface Props {
   chart: QimenChart;
   question?: string;
+  bare?: boolean;
 }
 
-export function RuleInterpretation({ chart, question }: Props) {
+export function RuleInterpretation({ chart, question, bare }: Props) {
   const sections = useMemo(() => {
     const result = interpretChart(chart);
     return generateInterpretationText(chart, result);
   }, [chart]);
 
   return (
-    <div className="rounded-xl border border-qimen-border bg-qimen-surface p-6 space-y-5">
-      <h2 className="text-lg font-bold text-qimen-gold">规则解盘</h2>
+    <div className={bare ? 'space-y-5' : 'rounded-xl border border-qimen-border bg-qimen-surface p-6 space-y-5'}>
+      {!bare && <h2 className="text-lg font-bold text-qimen-gold">规则解盘</h2>}
 
       {question && (
         <div className="rounded-lg bg-qimen-gold/5 border border-qimen-gold/20 px-4 py-3">
