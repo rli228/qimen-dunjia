@@ -15,6 +15,29 @@ export {
   extractPrediction,
 } from './featureExtractor';
 
+export type {
+  CaseStudy,
+  CaseInterpretation,
+  KeyFactor,
+  CaseChartInfo,
+  CaseSource,
+  BookReference,
+} from './caseStudy';
+
+export {
+  createCase,
+  updateCase,
+  deleteCase,
+  getAllCases,
+  getCasesByEventType,
+  getCasesByTag,
+  getCasesByDifficulty,
+  getAllTags,
+  getCaseStats,
+  exportCasesJSON,
+  importCasesJSON,
+} from './caseStudy';
+
 export {
   createEvent,
   recordOutcome,

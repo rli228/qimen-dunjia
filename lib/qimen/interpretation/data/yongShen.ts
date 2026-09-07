@@ -121,14 +121,14 @@ export const EVENT_TEMPLATES: Record<EventTypeKey, EventTemplate> = {
     name: '体育竞猜',
     icon: '⚽',
     roles: [
-      { label: '主队', type: 'gan', target: '', description: '地盘日干代表主队', weight: 3, targetSource: 'dayGan', searchScope: 'diPan' },
-      { label: '客队', type: 'gan', target: '', description: '天盘日干代表客队', weight: 3, targetSource: 'dayGan', searchScope: 'tianPan' },
+      { label: '主队', type: 'gan', target: '', description: '地盘时干代表主队', weight: 3, targetSource: 'hourGan', searchScope: 'diPan' },
+      { label: '客队', type: 'gan', target: '', description: '天盘时干代表客队', weight: 3, targetSource: 'hourGan', searchScope: 'tianPan' },
       { label: '裁判', type: 'star', target: '', description: '值符代表裁判', weight: 1, targetSource: 'zhiFu' },
       { label: '器械', type: 'gan', target: '庚', description: '庚金代表比赛器械', weight: 1 },
       { label: '金牌', type: 'gan', target: '辛', description: '辛金代表金牌、荣誉', weight: 2 },
       { label: '技术', type: 'gate', target: '景', description: '景门代表技术指导', weight: 1 },
     ],
-    analysisGuide: '主队（地盘日干）与客队（天盘日干）落宫比较，宫旺者胜。主队宫克客队宫则主队胜，反之客队胜。两宫比和或同宫则平局可能大。辛（金牌）落宫与哪方相生则利哪方夺冠。值符（裁判）落宫看判罚倾向。',
+    analysisGuide: '主队（地盘时干）与客队（天盘时干）落宫比较，宫旺者胜。看宫位五行旺衰（月令生克）判断时令对谁有利。辛（金牌）地盘与天盘落宫比较，地盘辛宫克天盘辛宫则主队夺冠。值符（裁判）与哪方同宫则判罚倾向哪方。景门看教练指导。',
   },
 };
 
