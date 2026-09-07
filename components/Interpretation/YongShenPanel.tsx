@@ -57,6 +57,25 @@ export function YongShenPanel({ chart, defaultEventType }: Props) {
       {/* 分析结果 */}
       {result && (
         <div className="space-y-4">
+          {/* 综合结论 */}
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <h3 className="text-sm font-semibold">综合结论</h3>
+              <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${
+                result.coherence === '强' ? 'bg-qimen-green/10 text-qimen-green'
+                : result.coherence === '弱' ? 'bg-qimen-red/10 text-qimen-red'
+                : 'bg-gray-500/10 text-qimen-text-secondary'
+              }`}>
+                信号一致性：{result.coherence}
+              </span>
+            </div>
+            <div className="rounded-lg border border-qimen-gold/20 bg-qimen-gold/5 px-4 py-3">
+              <p className="whitespace-pre-line text-sm leading-relaxed text-qimen-text-secondary">
+                {result.conclusion}
+              </p>
+            </div>
+          </div>
+
           {/* 用神定位 */}
           <div>
             <h3 className="mb-2 text-sm font-semibold">用神定位</h3>
@@ -99,16 +118,6 @@ export function YongShenPanel({ chart, defaultEventType }: Props) {
               </div>
             </div>
           )}
-
-          {/* 结论 */}
-          <div>
-            <h3 className="mb-2 text-sm font-semibold">综合结论</h3>
-            <div className="rounded-lg border border-qimen-gold/20 bg-qimen-gold/5 px-4 py-3">
-              <p className="whitespace-pre-line text-sm leading-relaxed text-qimen-text-secondary">
-                {result.conclusion}
-              </p>
-            </div>
-          </div>
         </div>
       )}
 
