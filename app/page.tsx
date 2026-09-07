@@ -5,6 +5,7 @@ import { NinePalaceGrid } from '@/components/QimenBoard/NinePalaceGrid';
 import { InterpretationPanel } from '@/components/Interpretation/InterpretationPanel';
 import { RuleInterpretation } from '@/components/Interpretation/RuleInterpretation';
 import { AiPanel } from '@/components/Interpretation/AiPanel';
+import { YongShenPanel } from '@/components/Interpretation/YongShenPanel';
 import { QuestionInput } from '@/components/InputForm/QuestionInput';
 import { ChartForm } from '@/components/InputForm/ChartForm';
 import { generateChart } from '@/lib/qimen/algorithm';
@@ -105,6 +106,7 @@ export default function HomePage() {
           </div>
           <div className="mx-auto max-w-2xl space-y-6">
             <RuleInterpretation chart={chart} question={question} />
+            <YongShenPanel chart={chart} />
             <InterpretationPanel chart={chart} />
             <AiPanel chart={chart} question={question} />
           </div>
