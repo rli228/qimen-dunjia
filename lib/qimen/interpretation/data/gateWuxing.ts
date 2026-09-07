@@ -52,10 +52,10 @@ export type Vitality = '旺' | '相' | '休' | '囚' | '死';
  * 计算门的旺相休囚死
  */
 export function getVitality(gateWuxing: string, seasonWuxing: string): Vitality {
-  if (gateWuxing === seasonWuxing) return '旺';       // 同五行
-  if (SHENG[gateWuxing] === seasonWuxing) return '相'; // 门生季节
-  if (SHENG[seasonWuxing] === gateWuxing) return '休'; // 季节生门
-  if (KE[gateWuxing] === seasonWuxing) return '囚';    // 门克季节
-  if (KE[seasonWuxing] === gateWuxing) return '死';    // 季节克门
+  if (gateWuxing === seasonWuxing) return '旺';       // 同五行 → 最旺
+  if (SHENG[seasonWuxing] === gateWuxing) return '相'; // 季节生我 → 得生气
+  if (SHENG[gateWuxing] === seasonWuxing) return '休'; // 我生季节 → 泄气
+  if (KE[gateWuxing] === seasonWuxing) return '囚';    // 我克季节 → 耗力
+  if (KE[seasonWuxing] === gateWuxing) return '死';    // 季节克我 → 受克
   return '休'; // fallback
 }
