@@ -35,11 +35,15 @@ export interface YongShenRelation {
   fortune: '吉' | '凶' | '平';
 }
 
+export type Tier = '大吉' | '小吉' | '平' | '小凶' | '大凶';
+
 export interface YongShenResult {
   eventType: EventTypeKey;
   locations: YongShenLocation[];
   relations: YongShenRelation[];
-  conclusion: string;
+  tier: Tier;                      // 一眼结论
+  headline: string;                // 一句话摘要（给小白看）
+  conclusion: string;              // 详细分析（给有基础的看）
   coherence: '强' | '中' | '弱';  // 信号一致性
 }
 
@@ -67,6 +71,16 @@ function describeWuxingRelation(wx1: string, name1: string, wx2: string, name2: 
 const GAN_WUXING: Record<string, string> = {
   '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
   '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水',
+};
+
+// ─── 河图数（定量预测） ──────────────────────────────────────────────────────
+
+const HETU_NUMBERS: Record<string, [number, number]> = {
+  '水': [1, 6],
+  '火': [2, 7],
+  '木': [3, 8],
+  '金': [4, 9],
+  '土': [5, 10],
 };
 
 // ─── 宫位方位 ────────────────────────────────────────────────────────────────
@@ -290,15 +304,13 @@ function getCoherence(locations: YongShenLocation[], relations: YongShenRelation
 
 // ─── 生成结论 ────────────────────────────────────────────────────────────────
 
-type Tier = '大吉' | '小吉' | '平' | '小凶' | '大凶';
-
 function generateConclusion(
   chart: QimenChart,
   eventType: EventTypeKey,
   locations: YongShenLocation[],
   relations: YongShenRelation[],
   coherence: '强' | '中' | '弱',
-): string {
+): { tier: Tier; headline: string; conclusion: string } {
   const template = EVENT_TEMPLATES[eventType];
   const lines: string[] = [];
 
@@ -375,6 +387,9 @@ function generateConclusion(
     // Fix 2: 辛双盘比较
     const xinLine = getXinDualComparison(chart);
     if (xinLine) lines.push(xinLine);
+    // 河图数预测金牌数量
+    const hetuLine = getHetuPrediction(locations);
+    if (hetuLine) lines.push(hetuLine);
   } else if (primary) {
     const dir = PALACE_DIRECTION[primary.palace!] ?? '';
     lines.push(getKeyFactorLine(eventType, primary, dir));
@@ -398,7 +413,10 @@ function generateConclusion(
   lines.push('');
   lines.push(`分析要点：${template.analysisGuide}`);
 
-  return lines.join('\n');
+  // 一句话摘要（给小白看）
+  const headline = getHeadline(eventType, tier, locations);
+
+  return { tier, headline, conclusion: lines.join('\n') };
 }
 
 /** 条件式表达，按5档 × 事类 */
@@ -518,6 +536,18 @@ function getXinDualComparison(chart: QimenChart): string | null {
   return `辛（金牌）地盘在${diPanXinPalace}宫(${diWx})，天盘在${tianPanXinPalace}宫(${tianWx})，比和。`;
 }
 
+/** 河图数预测：辛（金牌）落宫五行 → 数量提示 */
+function getHetuPrediction(locations: YongShenLocation[]): string | null {
+  const jinPai = locations.find(l => l.role.label === '金牌');
+  if (!jinPai || !jinPai.palace || !jinPai.palaceWuxing) return null;
+
+  const nums = HETU_NUMBERS[jinPai.palaceWuxing];
+  if (!nums) return null;
+
+  const [sheng, cheng] = nums;
+  return `辛（金牌）落${jinPai.palaceName}，宫属${jinPai.palaceWuxing}，河图数${sheng}、${cheng}，按传统断法主队金牌数与${sheng}或${cheng}相关（如${sheng}、${sheng + 10}、${cheng}、${cheng + 10}枚）。`;
+}
+
 /** 主用神具体状态行（含方位建议） */
 function getKeyFactorLine(eventType: EventTypeKey, primary: YongShenLocation, direction: string): string {
   const label = primary.role.label;
@@ -525,6 +555,69 @@ function getKeyFactorLine(eventType: EventTypeKey, primary: YongShenLocation, di
   const dirHint = direction ? `，落宫方位在${direction}` : '';
 
   return `主用神${label}（${primary.role.target}）落${primary.palaceName}，${fortuneDesc}${dirHint}。`;
+}
+
+/** 一句话摘要：简洁直观，小白一眼能懂 */
+function getHeadline(eventType: EventTypeKey, tier: Tier, locations: YongShenLocation[]): string {
+  const headlines: Record<Tier, Record<EventTypeKey, string>> = {
+    '大吉': {
+      '婚姻感情': '感情大利，宜推进',
+      '求财经商': '财运旺盛，大利求财',
+      '考试求学': '文运大旺，利考试',
+      '出行远行': '出行大吉，一路顺遂',
+      '疾病健康': '病情可控，康复有望',
+      '官讼诉讼': '我方占优，利诉讼',
+      '求职面试': '机遇大好，利入职',
+      '失物寻找': '可以找回',
+      '体育竞猜': '主队胜面大',
+    },
+    '小吉': {
+      '婚姻感情': '感情有利，可争取',
+      '求财经商': '财运尚可，小有收获',
+      '考试求学': '文运尚可，有一定优势',
+      '出行远行': '出行可行，总体顺利',
+      '疾病健康': '病情趋稳，耐心调养',
+      '官讼诉讼': '略占优势，可争取',
+      '求职面试': '有一定机会',
+      '失物寻找': '有望找回，需耐心',
+      '体育竞猜': '主队略优',
+    },
+    '平': {
+      '婚姻感情': '吉凶参半，需经营',
+      '求财经商': '财运平平，谨慎操作',
+      '考试求学': '发挥不定，需努力',
+      '出行远行': '出行一般，注意安全',
+      '疾病健康': '病情反复，耐心调养',
+      '官讼诉讼': '势均力敌，胜负难料',
+      '求职面试': '竞争激烈，需展示优势',
+      '失物寻找': '寻找费力，结果不定',
+      '体育竞猜': '双方接近，可能平局',
+    },
+    '小凶': {
+      '婚姻感情': '存在阻碍，暂缓为宜',
+      '求财经商': '财运欠佳，有风险',
+      '考试求学': '准备不足，需加倍努力',
+      '出行远行': '路上有阻，建议改期',
+      '疾病健康': '病情可能加重，积极治疗',
+      '官讼诉讼': '我方劣势，宜和解',
+      '求职面试': '时机不佳，建议等待',
+      '失物寻找': '找回困难',
+      '体育竞猜': '客队略优',
+    },
+    '大凶': {
+      '婚姻感情': '阻碍较大，暂缓为宜',
+      '求财经商': '风险高，宜守不宜攻',
+      '考试求学': '考运不佳，需加倍努力',
+      '出行远行': '不利出行，建议改期',
+      '疾病健康': '病情较重，不可大意',
+      '官讼诉讼': '劣势明显，宜调解',
+      '求职面试': '受阻较大，等待时机',
+      '失物寻找': '难以找回',
+      '体育竞猜': '客队胜面大',
+    },
+  };
+
+  return headlines[tier][eventType];
 }
 
 // ─── 主函数 ──────────────────────────────────────────────────────────────────
@@ -535,7 +628,7 @@ export function analyzeYongShen(chart: QimenChart, eventType: EventTypeKey): Yon
   const locations = template.roles.map(role => locateYongShen(chart, role));
   const relations = analyzeRelations(locations);
   const coherence = getCoherence(locations, relations);
-  const conclusion = generateConclusion(chart, eventType, locations, relations, coherence);
+  const { tier, headline, conclusion } = generateConclusion(chart, eventType, locations, relations, coherence);
 
-  return { eventType, locations, relations, conclusion, coherence };
+  return { eventType, locations, relations, tier, headline, conclusion, coherence };
 }
