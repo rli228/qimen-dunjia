@@ -5,6 +5,7 @@ import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import type { QimenChart } from '@/lib/qimen/types';
 import { EVENT_TYPE_KEYS, type EventTypeKey } from '@/lib/qimen/interpretation/data/yongShen';
 import { analyzeYongShen } from '@/lib/qimen/interpretation/yongShenAnalysis';
+import { MarriagePanel } from './MarriagePanel';
 
 interface Props {
   chart: QimenChart;
@@ -21,6 +22,14 @@ const fortuneBadge = {
   '吉': 'bg-qimen-green/10 text-qimen-green',
   '凶': 'bg-qimen-red/10 text-qimen-red',
   '平': 'bg-gray-500/10 text-qimen-text-secondary',
+};
+
+const tierStyle = {
+  '大吉': { bg: 'bg-qimen-green/10 border-qimen-green/30', text: 'text-qimen-green', badge: 'bg-qimen-green text-white' },
+  '小吉': { bg: 'bg-qimen-green/5 border-qimen-green/20', text: 'text-qimen-green', badge: 'bg-qimen-green/80 text-white' },
+  '平':   { bg: 'bg-gray-500/5 border-gray-500/20', text: 'text-qimen-text-secondary', badge: 'bg-gray-500 text-white' },
+  '小凶': { bg: 'bg-qimen-red/5 border-qimen-red/20', text: 'text-qimen-red', badge: 'bg-qimen-red/80 text-white' },
+  '大凶': { bg: 'bg-qimen-red/10 border-qimen-red/30', text: 'text-qimen-red', badge: 'bg-qimen-red text-white' },
 };
 
 export function YongShenPanel({ chart, defaultEventType }: Props) {
@@ -56,26 +65,37 @@ export function YongShenPanel({ chart, defaultEventType }: Props) {
       </div>
 
       {/* 分析结果 */}
-      {result && (
+      {eventType === '婚姻感情' && (
+        <MarriagePanel chart={chart} />
+      )}
+
+      {result && eventType !== '婚姻感情' && (
         <div className="space-y-4">
-          {/* 综合结论 */}
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <h3 className="text-sm font-semibold">综合结论</h3>
-              <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${
+          {/* 一眼结论 */}
+          <div className={`rounded-lg border px-4 py-3 ${tierStyle[result.tier].bg}`}>
+            <div className="flex items-center gap-3">
+              <span className={`rounded-md px-2.5 py-1 text-sm font-bold ${tierStyle[result.tier].badge}`}>
+                {result.tier}
+              </span>
+              <span className={`text-base font-semibold ${tierStyle[result.tier].text}`}>
+                {result.headline}
+              </span>
+              <span className={`ml-auto rounded px-2 py-0.5 text-[10px] font-medium ${
                 result.coherence === '强' ? 'bg-qimen-green/10 text-qimen-green'
                 : result.coherence === '弱' ? 'bg-qimen-red/10 text-qimen-red'
                 : 'bg-gray-500/10 text-qimen-text-secondary'
               }`}>
-                信号一致性：{result.coherence}
+                信号{result.coherence}
               </span>
             </div>
-            <div className="rounded-lg border border-qimen-gold/20 bg-qimen-gold/5 px-4 py-3">
-              <p className="whitespace-pre-line text-sm leading-relaxed text-qimen-text-secondary">
-                {result.conclusion}
-              </p>
-            </div>
           </div>
+
+          {/* 详细分析（折叠） */}
+          <CollapsibleSection title="详细分析" titleClass="text-sm font-semibold text-qimen-text">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-qimen-text-secondary">
+              {result.conclusion}
+            </p>
+          </CollapsibleSection>
 
           {/* 用神详情（可折叠） */}
           <CollapsibleSection title="用神详情" titleClass="text-sm font-semibold text-qimen-text">
@@ -121,7 +141,7 @@ export function YongShenPanel({ chart, defaultEventType }: Props) {
         </div>
       )}
 
-      {!result && (
+      {!result && eventType !== '婚姻感情' && (
         <p className="py-4 text-center text-sm text-qimen-text-secondary">
           请选择一个事类开始分析
         </p>

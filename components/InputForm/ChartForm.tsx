@@ -9,25 +9,32 @@ interface ChartFormProps {
 
 export function ChartForm({ onSubmit }: ChartFormProps) {
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [day, setDay] = useState(now.getDate());
-  const [hour, setHour] = useState(now.getHours());
-  const [minute, setMinute] = useState(now.getMinutes());
+  const [year, setYear] = useState(String(now.getFullYear()));
+  const [month, setMonth] = useState(String(now.getMonth() + 1));
+  const [day, setDay] = useState(String(now.getDate()));
+  const [hour, setHour] = useState(String(now.getHours()));
+  const [minute, setMinute] = useState(String(now.getMinutes()));
   const [method, setMethod] = useState<'拆补法' | '置闰法'>('拆补法');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ year, month, day, hour, minute, method });
+    onSubmit({
+      year: Number(year),
+      month: Number(month),
+      day: Number(day),
+      hour: Number(hour),
+      minute: Number(minute),
+      method,
+    });
   };
 
   const handleNow = () => {
     const n = new Date();
-    setYear(n.getFullYear());
-    setMonth(n.getMonth() + 1);
-    setDay(n.getDate());
-    setHour(n.getHours());
-    setMinute(n.getMinutes());
+    setYear(String(n.getFullYear()));
+    setMonth(String(n.getMonth() + 1));
+    setDay(String(n.getDate()));
+    setHour(String(n.getHours()));
+    setMinute(String(n.getMinutes()));
   };
 
   return (
@@ -40,7 +47,7 @@ export function ChartForm({ onSubmit }: ChartFormProps) {
           <input
             type="number"
             value={year}
-            onChange={e => setYear(Number(e.target.value))}
+            onChange={e => setYear(e.target.value)}
             className="w-full rounded-lg border border-qimen-border bg-qimen-bg px-3 py-2 text-center text-sm"
           />
         </div>
@@ -51,7 +58,7 @@ export function ChartForm({ onSubmit }: ChartFormProps) {
             min={1}
             max={12}
             value={month}
-            onChange={e => setMonth(Number(e.target.value))}
+            onChange={e => setMonth(e.target.value)}
             className="w-full rounded-lg border border-qimen-border bg-qimen-bg px-3 py-2 text-center text-sm"
           />
         </div>
@@ -62,7 +69,7 @@ export function ChartForm({ onSubmit }: ChartFormProps) {
             min={1}
             max={31}
             value={day}
-            onChange={e => setDay(Number(e.target.value))}
+            onChange={e => setDay(e.target.value)}
             className="w-full rounded-lg border border-qimen-border bg-qimen-bg px-3 py-2 text-center text-sm"
           />
         </div>
@@ -73,7 +80,7 @@ export function ChartForm({ onSubmit }: ChartFormProps) {
             min={0}
             max={23}
             value={hour}
-            onChange={e => setHour(Number(e.target.value))}
+            onChange={e => setHour(e.target.value)}
             className="w-full rounded-lg border border-qimen-border bg-qimen-bg px-3 py-2 text-center text-sm"
           />
         </div>
@@ -84,7 +91,7 @@ export function ChartForm({ onSubmit }: ChartFormProps) {
             min={0}
             max={59}
             value={minute}
-            onChange={e => setMinute(Number(e.target.value))}
+            onChange={e => setMinute(e.target.value)}
             className="w-full rounded-lg border border-qimen-border bg-qimen-bg px-3 py-2 text-center text-sm"
           />
         </div>
