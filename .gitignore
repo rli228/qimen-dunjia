@@ -33,3 +33,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 插件本地产物（会话报告与个人偏好，非项目配置）
+.pair-programming-session.md
+/.plugin-config/
