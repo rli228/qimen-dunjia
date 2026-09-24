@@ -12,11 +12,14 @@ import type { ChartInput } from '@/lib/qimen/types';
 import type { CaseStudy } from '@/lib/qimen/research/caseStudy';
 import seedCasesRaw from '@/lib/qimen/research/seedCases.json';
 import { analyzeYongShen } from '@/lib/qimen/interpretation/yongShenAnalysis';
+import { analyzeTiming } from '@/lib/qimen/interpretation/timing';
+import { buildEvent } from '@/lib/qimen/research/eventStore';
 import { classify } from './classifier';
 import { createAnalystSession } from './analyst';
 import { evaluate } from './evaluator';
 import { describeApiError, type LlmBackend } from './llm';
 import type { ToolContext } from './tools/index';
+import type { PalaceIndex } from '@/lib/qimen/constants';
 import type {
   PipelineInput, PipelineResult, EventEmitter,
   AnalysisResult, AnalysisEvidence, EvaluationResult,
@@ -247,6 +250,41 @@ export async function runPipeline(
     emit({ type: 'revise', round, reason: decision.reason });
   }
 
+  // ── 研究记录 ──
+  // 每次解盘都留档，否则永远无法得出真实准确率。
+  // 服务端只负责构建，落盘由客户端完成（eventStore 用 localStorage）。
+  const ysPalaces = analyzeYongShen(chart, classification.eventType).locations
+    .map(l => l.palace)
+    .filter((p): p is PalaceIndex => p !== null);
+  const timing = analyzeTiming(chart, ysPalaces);
+
+  const record = buildEvent(chart, classification.eventType, input.question, {
+    source: 'agent',
+    questionMeta: {
+      classifierConfidence: classification.confidence.toFixed(2),
+      ...(classification.alternative ? { alternativeEventType: classification.alternative } : {}),
+    },
+    prediction: {
+      agent: {
+        tier: analysis!.tier,
+        headline: analysis!.headline,
+        confidence: analysis!.confidence,
+        verdict: evaluation!.verdict,
+        degraded: degraded !== null,
+      },
+      timing: {
+        distance: timing.distance,
+        suggestedUnit: timing.suggestedUnit,
+        candidates: timing.candidates.map(c => ({
+          method: c.method,
+          value: c.value,
+          unit: c.unit,
+        })),
+      },
+    },
+  });
+  emit({ type: 'record', data: record });
+
   const finalResult: PipelineResult = {
     chart,
     classification,
@@ -255,6 +293,7 @@ export async function runPipeline(
     revisions: round - 1,
     toolCalls: session.toolCalls,
     degraded,
+    record,
   };
   emit({ type: 'final', data: finalResult });
   return finalResult;

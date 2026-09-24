@@ -114,6 +114,9 @@ export interface EventRecord {
 
   // 结果回访
   outcome: OutcomeRecord | null;     // null = 尚未回访
+
+  /** 记录来源：rule=纯规则解盘，agent=三 agent 流水线 */
+  source?: 'rule' | 'agent';
 }
 
 // ─── 盘面快照 ────────────────────────────────────────────────────────────────
@@ -195,6 +198,31 @@ export interface SystemPrediction {
   tier: string;              // 大吉/小吉/平/小凶/大凶
   coherence: string;         // 强/中/弱
   conclusion: string;        // 系统生成的结论文本
+
+  /**
+   * AI 分析 agent 的结论。规则引擎与 agent 可能给出不同 tier，
+   * 两者都登记才能事后分别评估 —— 这正是消融实验 M2 与 M2+agent 的对照。
+   * 纯规则解盘时为 undefined。
+   */
+  agent?: {
+    tier: string;
+    headline: string;
+    confidence: string;
+    /** 评估 agent 的裁决；degraded 表示这份结论是降级后的规则引擎输出 */
+    verdict: string;
+    degraded: boolean;
+  };
+
+  /**
+   * 应期预测。这是整条记录里唯一天然可证伪的字段 ——
+   * tier 事后怎么解释都行，日期不行。
+   */
+  timing?: {
+    distance: string;
+    suggestedUnit: string;
+    /** 各法推出的候选，回访时逐条比对 */
+    candidates: { method: string; value: string; unit: string }[];
+  };
 }
 
 // ─── 结果回访 ─────────────────────────────────────────────────────────────────
@@ -205,4 +233,11 @@ export interface OutcomeRecord {
   confidence: 1 | 2 | 3;    // 对标签的确信度：1=不确定, 2=较确定, 3=非常确定
   actualResult: string;      // 实际结果的自由文本描述
   notes?: string;            // 补充说明
+
+  /**
+   * 应期回访：事情实际发生的日期（ISO 8601 日期）。
+   * 与 systemPrediction.timing.candidates 比对即可得出各法的命中率 ——
+   * 不需要主观评分标准，日期对不对是客观的。
+   */
+  actualDate?: string;
 }

@@ -40,30 +40,56 @@ function uuid(): string {
 
 // ─── 公开 API ────────────────────────────────────────────────────────────────
 
-/** 创建事件登记 */
+/**
+ * 构建事件记录（纯函数，不落盘）。
+ *
+ * 与 createEvent 分开是因为流水线跑在服务端，而本模块用 localStorage ——
+ * 服务端构建记录、随 SSE 发给客户端、由客户端保存。
+ */
+export function buildEvent(
+  chart: QimenChart,
+  eventType: EventTypeKey,
+  questionText: string,
+  options: {
+    questionMeta?: Record<string, string>;
+    /** 覆盖系统预测。agent 流水线用它带上 agent 结论与应期 */
+    prediction?: Partial<EventRecord['systemPrediction']>;
+    source?: EventRecord['source'];
+  } = {},
+): EventRecord {
+  return {
+    id: uuid(),
+    createdAt: new Date().toISOString(),
+    version: 1,
+    eventType,
+    questionText,
+    questionMeta: options.questionMeta,
+    chartSnapshot: extractSnapshot(chart),
+    features: extractFeatures(chart, eventType),
+    systemPrediction: { ...extractPrediction(chart, eventType), ...options.prediction },
+    outcome: null,
+    source: options.source ?? 'rule',
+  };
+}
+
+/** 保存一条已构建的记录。重复 id 直接忽略，避免刷新页面时重复登记 */
+export function saveEvent(record: EventRecord): boolean {
+  const all = loadAll();
+  if (all.some(e => e.id === record.id)) return false;
+  all.push(record);
+  saveAll(all);
+  return true;
+}
+
+/** 创建并保存（客户端直接起盘时用） */
 export function createEvent(
   chart: QimenChart,
   eventType: EventTypeKey,
   questionText: string,
   questionMeta?: Record<string, string>,
 ): EventRecord {
-  const record: EventRecord = {
-    id: uuid(),
-    createdAt: new Date().toISOString(),
-    version: 1,
-    eventType,
-    questionText,
-    questionMeta,
-    chartSnapshot: extractSnapshot(chart),
-    features: extractFeatures(chart, eventType),
-    systemPrediction: extractPrediction(chart, eventType),
-    outcome: null,
-  };
-
-  const all = loadAll();
-  all.push(record);
-  saveAll(all);
-
+  const record = buildEvent(chart, eventType, questionText, { questionMeta });
+  saveEvent(record);
   return record;
 }
 

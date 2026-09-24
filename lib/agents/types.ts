@@ -12,6 +12,7 @@ import type { QimenChart, ChartInput } from '@/lib/qimen/types';
 import type { EventTypeKey } from '@/lib/qimen/interpretation/data/yongShen';
 import type { Tier } from '@/lib/qimen/interpretation/yongShenAnalysis';
 import type { CaseStudy } from '@/lib/qimen/research/caseStudy';
+import type { EventRecord } from '@/lib/qimen/research/schema';
 
 // ─── 流水线输入 ───────────────────────────────────────────────────────────────
 
@@ -126,6 +127,12 @@ export interface PipelineResult {
   evaluation: EvaluationResult;
   /** 实际执行的修订轮数 */
   revisions: number;
+  /**
+   * 本次解盘的研究记录。服务端构建、客户端落盘 —— 流水线跑在服务端，
+   * 而 eventStore 用的是 localStorage。
+   * 没有这一步，系统永远拿不到真实准确率：每次解盘都随风而逝。
+   */
+  record: EventRecord;
   toolCalls: ToolCallLog[];
   /**
    * 非 null 表示这份 analysis **不是** agent 的产出，而是评估不通过后
@@ -149,6 +156,7 @@ export type PipelineEvent =
   | { type: 'evaluation'; data: EvaluationResult; round: number }
   | { type: 'revise'; round: number; reason: string }
   | { type: 'degrade'; round: number; reason: string }
+  | { type: 'record'; data: EventRecord }
   | { type: 'final'; data: PipelineResult }
   | { type: 'error'; message: string };
 

@@ -157,18 +157,12 @@ export function extractPrediction(
 ): SystemPrediction {
   const result = analyzeYongShen(chart, eventType);
 
-  // 从结论第一行提取 tier
-  const firstLine = result.conclusion.split('\n')[0];
-  let tier = '平';
-  if (firstLine.includes('多项因素利') || firstLine.includes('生机旺盛') || firstLine.includes('寻回可能性较大')) tier = '大吉';
-  else if (firstLine.includes('尚可') || firstLine.includes('有一定') || firstLine.includes('略占优势')) tier = '小吉';
-  else if (firstLine.includes('欠佳') || firstLine.includes('一定阻碍') || firstLine.includes('一定劣势')) tier = '小凶';
-  else if (firstLine.includes('多处受克失令') || firstLine.includes('多处不利')) tier = '大凶';
-  else if (firstLine.includes('吉凶参半') || firstLine.includes('势均力敌') || firstLine.includes('实力接近')) tier = '平';
-
+  // analyzeYongShen 直接返回 tier。此处原先是从 conclusion 首行做字符串匹配倒推，
+  // 任何一次文案调整都会让 tier 悄悄退回默认值「平」，而不会有任何报错。
   return {
-    tier,
+    tier: result.tier,
     coherence: result.coherence,
     conclusion: result.conclusion,
   };
 }
+

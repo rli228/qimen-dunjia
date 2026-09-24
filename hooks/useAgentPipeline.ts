@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { getAllCases } from '@/lib/qimen/research/caseStudy';
+import { saveEvent } from '@/lib/qimen/research/eventStore';
 import type { ChartInput } from '@/lib/qimen/types';
 import type { EventTypeKey } from '@/lib/qimen/interpretation/data/yongShen';
 import type { PipelineEvent, PipelineResult, ClassificationResult, PipelineStage } from '@/lib/agents/types';
@@ -24,6 +25,8 @@ export interface AgentPipelineState {
   classification: ClassificationResult | null;
   result: PipelineResult | null;
   error: string | null;
+  /** 本次解盘是否已留档。留档是拿到真实准确率的前提 */
+  recorded: boolean;
 }
 
 const STAGE_LABELS: Record<PipelineStage, string> = {
@@ -35,7 +38,7 @@ const STAGE_LABELS: Record<PipelineStage, string> = {
 
 const INITIAL: AgentPipelineState = {
   status: 'idle', stage: null, trace: [], chart: null,
-  classification: null, result: null, error: null,
+  classification: null, result: null, error: null, recorded: false,
 };
 
 /**
@@ -147,6 +150,18 @@ export function useAgentPipeline(apiKey: string) {
               case 'degrade':
                 push({ kind: 'degrade', label: '评估不通过，降级为规则引擎结论', detail: event.reason });
                 break;
+              case 'record': {
+                // 服务端构建、此处落盘 —— eventStore 用 localStorage，服务端写不了。
+                // 保存失败（隐私模式、存储被禁）不应影响解盘结果的展示。
+                let ok = false;
+                try {
+                  ok = saveEvent(event.data);
+                } catch {
+                  ok = false;
+                }
+                setState(prev => ({ ...prev, recorded: ok }));
+                break;
+              }
               case 'final':
                 setState(prev => ({ ...prev, status: 'done', stage: null, result: event.data }));
                 break;
