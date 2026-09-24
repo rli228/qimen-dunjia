@@ -14,7 +14,7 @@ import { toJsonSchema, type LlmBackend, type AgentTurn, type ToolSpec, type Tool
 import {
   getToolsForEventType, toToolSpec, runTool,
   submitAnalysisSchema, SUBMIT_TOOL_NAME,
-  type ToolContext, type AgentTool,
+  type ToolContext, type AgentTool, type SubmitAnalysisInput,
 } from './tools/index';
 import { serializeChart } from '@/lib/ai/buildPrompt';
 import { EVENT_TEMPLATES } from '@/lib/qimen/interpretation/data/yongShen';
@@ -145,27 +145,32 @@ export function createAnalystSession(
         continue;
       }
 
-      // 交卷
-      const submit = response.toolCalls.find(t => t.name === SUBMIT_TOOL_NAME);
-      if (submit) {
-        const parsed = submitAnalysisSchema.safeParse(submit.input);
-        if (parsed.success) return { ...parsed.data };
-        // 字段不合法时把错误当工具结果喂回去，让模型自己修，别浪费一整轮
-        turns.push({
-          role: 'tool_results',
-          results: [{
-            id: submit.id,
-            name: SUBMIT_TOOL_NAME,
-            isError: true,
-            text: `提交被拒绝，字段不合法：${parsed.error.issues.map(i => `${i.path.join('.')} ${i.message}`).join('; ')}。请修正后重新调用 ${SUBMIT_TOOL_NAME}。`,
-          }],
-        });
-        continue;
-      }
-
-      // 执行本轮全部工具调用
+      // 本轮**每一个** tool_use 都必须得到一条 tool_result，交卷那次也不例外。
+      // 漏掉任何一条，下一次请求就会被 Anthropic 以 400 拒绝
+      // （"tool_use ids were found without tool_result blocks immediately after"）。
+      // 这一点在修订轮尤其致命：会话是跨轮复用的，上一轮悬空的 tool_use
+      // 会一直卡在 turns 里，让之后每次请求都失败。
       const results: ToolResult[] = [];
+      let submitted: SubmitAnalysisInput | null = null;
+
       for (const call of response.toolCalls) {
+        if (call.name === SUBMIT_TOOL_NAME) {
+          const parsed = submitAnalysisSchema.safeParse(call.input);
+          if (parsed.success) {
+            submitted = parsed.data;
+            results.push({ id: call.id, name: call.name, text: '已收到分析结果。' });
+          } else {
+            // 字段不合法时把错误当工具结果喂回去，让模型自己修，别浪费一整轮
+            results.push({
+              id: call.id,
+              name: call.name,
+              isError: true,
+              text: `提交被拒绝，字段不合法：${parsed.error.issues.map(i => `${i.path.join('.')} ${i.message}`).join('; ')}。请修正后重新调用 ${SUBMIT_TOOL_NAME}。`,
+            });
+          }
+          continue;
+        }
+
         const tool = toolMap.get(call.name);
         emit({ type: 'tool_call', name: call.name, input: call.input });
         const started = Date.now();
@@ -192,7 +197,11 @@ export function createAnalystSession(
 
         results.push({ id: call.id, name: call.name, text: outcome.text, isError: !outcome.ok });
       }
+
       turns.push({ role: 'tool_results', results });
+
+      // 先补完 tool_result 再返回，否则会话在修订轮就废了
+      if (submitted) return submitted;
     }
 
     throw new Error(`分析 agent 在 ${MAX_ITERATIONS} 轮内没有完成提交`);
