@@ -39,6 +39,8 @@ export {
 } from './caseStudy';
 
 export {
+  buildEvent,
+  saveEvent,
   createEvent,
   recordOutcome,
   getAllEvents,

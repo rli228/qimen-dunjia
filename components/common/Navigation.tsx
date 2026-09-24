@@ -23,6 +23,9 @@ export function Navigation() {
           <Link href="/classics" className="text-sm hover:text-qimen-gold transition-colors">
             古籍
           </Link>
+          <Link href="/research" className="text-sm hover:text-qimen-gold transition-colors">
+            记录
+          </Link>
 
           <button
             onClick={toggle}
