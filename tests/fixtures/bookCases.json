@@ -503,6 +503,146 @@
       "note": "",
       "errata": null,
       "knownBug": null
+    },
+    {
+      "id": "szm-lost-01",
+      "chapter": "钱物丢失预测",
+      "label": "实例一：王建国测找发票",
+      "page": "256",
+      "datetime": {
+        "year": 1994,
+        "month": 12,
+        "day": 19,
+        "hour": 16,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "甲戌年丙子月己卯日壬申时",
+        "dunType": "阳遁",
+        "juNumber": 1,
+        "xunShou": "甲子",
+        "zhiFu": "天蓬",
+        "zhiFuPalace": 2,
+        "zhiShi": "休",
+        "zhiShiPalace": 9,
+        "yuan": null
+      },
+      "note": "超神法。1994 年冬至在 12-22，而本例起局于 12-19，冬至尚未交节。符头己卯（12-19 当日，卯属子午卯酉为上元）早于冬至 3 天，书按冬至上元起局得阳遁 1 局；拆补法此时仍在大雪节气内，取上元得阴遁 4 局，即本项目所算。书载「天蓬星为值符落 5 宫，寄 2 宫」—— 值符落中五宫寄坤二的情形。壬申时（15-17 时）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-lost-02",
+      "chapter": "钱物丢失预测",
+      "label": "实例二：王建国测身份证下落",
+      "page": "257",
+      "datetime": {
+        "year": 1995,
+        "month": 6,
+        "day": 7,
+        "hour": 18,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "乙亥年壬午月己巳日癸酉时",
+        "dunType": "阳遁",
+        "juNumber": 3,
+        "xunShou": "甲子",
+        "zhiFu": "天冲",
+        "zhiFuPalace": 8,
+        "zhiShi": "伤",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "伏吟局。书载「甲子戊在 3 宫」，可交叉验证六仪落宫；癸酉时（17-19 时）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-lost-03",
+      "chapter": "钱物丢失预测",
+      "label": "实例三：王建国测失钱",
+      "page": "258",
+      "datetime": {
+        "year": 1996,
+        "month": 3,
+        "day": 24,
+        "hour": 11,
+        "minute": 45
+      },
+      "stated": {
+        "siZhu": null,
+        "dunType": "阳遁",
+        "juNumber": 6,
+        "xunShou": "甲戌",
+        "zhiFu": "天柱",
+        "zhiFuPalace": 1,
+        "zhiShi": "惊",
+        "zhiShiPalace": 6,
+        "yuan": null
+      },
+      "note": "",
+      "errata": {
+        "field": "siZhu",
+        "printed": "丙子年辛卯月申申日壬午时",
+        "correct": "丙子年辛卯月庚申日壬午时",
+        "reason": "干支中并无「申申」一柱，系「庚」误印为「申」。旁证：书载局数（阳 6）、旬首（甲戌）与按庚申日推算的结果完全一致。"
+      },
+      "knownBug": null
+    },
+    {
+      "id": "szm-lost-04",
+      "chapter": "钱物丢失预测",
+      "label": "实例四：测丢失文件",
+      "page": "260",
+      "datetime": {
+        "year": 1997,
+        "month": 7,
+        "day": 18,
+        "hour": 12,
+        "minute": 3
+      },
+      "stated": {
+        "siZhu": "丁丑年丁未月辛酉日甲午时",
+        "dunType": "阴遁",
+        "juNumber": 5,
+        "xunShou": null,
+        "zhiFu": "天芮",
+        "zhiFuPalace": 2,
+        "zhiShi": "死",
+        "zhiShiPalace": 2,
+        "yuan": null
+      },
+      "note": "甲午时（甲遁辛），且星门俱伏吟 —— 双重边界",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-lost-05",
+      "chapter": "钱物丢失预测",
+      "label": "实例五：测汽车丢失",
+      "page": "261",
+      "datetime": {
+        "year": 1998,
+        "month": 2,
+        "day": 16,
+        "hour": 7,
+        "minute": 50
+      },
+      "stated": {
+        "siZhu": "戊寅年甲寅月甲午日戊辰时",
+        "dunType": "阳遁",
+        "juNumber": 8,
+        "xunShou": "甲子",
+        "zhiFu": "天任",
+        "zhiFuPalace": 8,
+        "zhiShi": "生",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "日柱为甲午",
+      "errata": null,
+      "knownBug": null
     }
   ]
 }
