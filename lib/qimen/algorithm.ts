@@ -11,11 +11,13 @@ import {
   DEITY_NAMES_YIN,
   ROTATE_ORDER,
   TIAN_GAN,
+  JIA_HIDDEN,
   type PalaceIndex,
   type StarName,
   type GateName,
   type SanQiLiuYi,
   type TianGan,
+  type DiZhi,
   type DeityName,
 } from './constants';
 import type { ChartInput, Palace, QimenChart } from './types';
@@ -42,6 +44,29 @@ export function layoutDiPan(
     result[palaceIdx] = SAN_QI_LIU_YI[i];
   }
   return result;
+}
+
+/**
+ * 遁甲：甲不上盘，藏于六仪之下。藏在哪一仪取决于是**哪一个**甲。
+ *
+ * 甲子→戊 甲戌→己 甲申→庚 甲午→辛 甲辰→壬 甲寅→癸
+ *
+ * 一律当作甲子（戊）会让值符落宫找错，天盘九星与八神随之整体错位 —— 而八门、
+ * 地盘干不受影响，所以盘看上去仍然"完整"，错得毫无征兆。
+ */
+function resolveShiGan(hourGan: TianGan, hourZhi: DiZhi): SanQiLiuYi {
+  return (hourGan === '甲' ? JIA_HIDDEN[hourGan + hourZhi] : hourGan) as SanQiLiuYi;
+}
+
+/** 时干在地盘的落宫 —— 值符星与值符神都转到这里 */
+function findShiGanPalace(
+  diPan: Record<PalaceIndex, SanQiLiuYi>,
+  shiGan: SanQiLiuYi,
+): PalaceIndex {
+  for (const [palace, gan] of Object.entries(diPan)) {
+    if (gan === shiGan) return Number(palace) as PalaceIndex;
+  }
+  return 1;
 }
 
 // ─── 值符值使 ────────────────────────────────────────────────────────────────
@@ -103,24 +128,18 @@ export function layoutTianPan(
   diPan: Record<PalaceIndex, SanQiLiuYi>,
   zhiFu: StarName,
   hourGan: TianGan,
+  hourZhi: DiZhi,
   dunType: '阳遁' | '阴遁'
 ): {
   tianPanGan: Record<PalaceIndex, SanQiLiuYi>;
   starPalaces: Record<PalaceIndex, StarName>;
 } {
-  let shiGan: SanQiLiuYi = hourGan as SanQiLiuYi;
-  if (hourGan === '甲') shiGan = '戊';
+  const shiGan = resolveShiGan(hourGan, hourZhi);
 
   // 值符原始宫位
   const zhiFuOriginal = STAR_ORIGINAL_PALACE[zhiFu];
   // 时干在地盘的宫位（值符要转到这里）
-  let targetPalace: PalaceIndex = 1;
-  for (const [palace, gan] of Object.entries(diPan)) {
-    if (gan === shiGan) {
-      targetPalace = Number(palace) as PalaceIndex;
-      break;
-    }
-  }
+  const targetPalace = findShiGanPalace(diPan, shiGan);
 
   // 计算旋转步数
   const fromIdx = ROTATE_ORDER.indexOf(zhiFuOriginal === 5 ? 2 : zhiFuOriginal);
@@ -252,27 +271,20 @@ export function generateChart(input: ChartInput): QimenChart {
 
   // 5. 旬首与空亡（提前计算，值符值使需要旬首六仪）
   const hourGan = siZhu.hour.gan;
+  const hourZhi = siZhu.hour.zhi;
   const { xunShou, kongWang, xunShouYi } = getXunShouInfo(siZhu.hour.gan, siZhu.hour.zhi);
 
   // 6. 值符值使（由旬首六仪决定）
   const { zhiFu, zhiShi } = getZhiFuZhiShi(xunShouYi as SanQiLiuYi, diPan);
 
   // 7. 天盘（九星 + 天盘干）
-  const { tianPanGan, starPalaces } = layoutTianPan(diPan, zhiFu, hourGan, dunType);
+  const { tianPanGan, starPalaces } = layoutTianPan(diPan, zhiFu, hourGan, hourZhi, dunType);
 
   // 8. 人盘（八门 — 小值符法，阳遁顺时针/阴遁逆时针）
   const gatePalaces = layoutRenPan(zhiShi, hourGan, dunType);
 
-  // 9. 值符落宫（用于神盘）— 时干在地盘的位置
-  let shiGan: SanQiLiuYi = hourGan as SanQiLiuYi;
-  if (hourGan === '甲') shiGan = '戊';
-  let zhiFuTarget: PalaceIndex = 1;
-  for (const [palace, gan] of Object.entries(diPan)) {
-    if (gan === shiGan) {
-      zhiFuTarget = Number(palace) as PalaceIndex;
-      break;
-    }
-  }
+  // 9. 值符落宫（用于神盘）— 时干在地盘的位置，与天盘的转动目标必须是同一宫
+  const zhiFuTarget = findShiGanPalace(diPan, resolveShiGan(hourGan, hourZhi));
 
   // 10. 神盘
   const deityPalaces = layoutShenPan(zhiFuTarget, dunType);
