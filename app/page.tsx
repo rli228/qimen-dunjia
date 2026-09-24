@@ -5,6 +5,7 @@ import { NinePalaceGrid } from '@/components/QimenBoard/NinePalaceGrid';
 import { InterpretationPanel } from '@/components/Interpretation/InterpretationPanel';
 import { RuleInterpretation } from '@/components/Interpretation/RuleInterpretation';
 import { AiPanel } from '@/components/Interpretation/AiPanel';
+import { AgentPanel } from '@/components/Agent/AgentPanel';
 import { YongShenPanel } from '@/components/Interpretation/YongShenPanel';
 import { QuestionInput } from '@/components/InputForm/QuestionInput';
 import { ChartForm } from '@/components/InputForm/ChartForm';
@@ -16,7 +17,7 @@ export default function HomePage() {
   const [chart, setChart] = useState<QimenChart | null>(null);
   const [question, setQuestion] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<'question' | 'manual'>('question');
+  const [mode, setMode] = useState<'question' | 'manual' | 'agent'>('question');
 
   // 问事起盘：用当前时间自动排盘
   const handleQuestion = (q: string, method: '拆补法' | '置闰法') => {
@@ -63,36 +64,39 @@ export default function HomePage() {
       </div>
 
       {/* 模式切换 */}
-      <div className="mx-auto flex max-w-lg justify-center gap-2">
-        <button
-          onClick={() => setMode('question')}
-          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-            mode === 'question'
-              ? 'bg-qimen-gold text-white'
-              : 'bg-qimen-bg text-qimen-text-secondary hover:text-qimen-text'
-          }`}
-        >
-          问事起盘
-        </button>
-        <button
-          onClick={() => setMode('manual')}
-          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-            mode === 'manual'
-              ? 'bg-qimen-gold text-white'
-              : 'bg-qimen-bg text-qimen-text-secondary hover:text-qimen-text'
-          }`}
-        >
-          手动排盘
-        </button>
+      <div className="mx-auto flex max-w-lg flex-wrap justify-center gap-2">
+        {([
+          ['question', '问事起盘'],
+          ['manual', '手动排盘'],
+          ['agent', 'Agent 流水线'],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            onClick={() => setMode(value)}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              mode === value
+                ? 'bg-qimen-gold text-white'
+                : 'bg-qimen-bg text-qimen-text-secondary hover:text-qimen-text'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className="mx-auto max-w-lg">
-        {mode === 'question' ? (
-          <QuestionInput onSubmit={handleQuestion} />
-        ) : (
-          <ChartForm onSubmit={handleManualSubmit} />
-        )}
-      </div>
+      {mode === 'agent' ? (
+        <div className="mx-auto max-w-2xl">
+          <AgentPanel />
+        </div>
+      ) : (
+        <div className="mx-auto max-w-lg">
+          {mode === 'question' ? (
+            <QuestionInput onSubmit={handleQuestion} />
+          ) : (
+            <ChartForm onSubmit={handleManualSubmit} />
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="mx-auto max-w-lg rounded-lg border border-qimen-red/30 bg-qimen-red/10 px-4 py-3 text-sm text-qimen-red">
@@ -100,7 +104,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {chart && (
+      {chart && mode !== 'agent' && (
         <>
           <div className="mx-auto max-w-md">
             <NinePalaceGrid chart={chart} />
