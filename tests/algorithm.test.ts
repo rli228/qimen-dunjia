@@ -10,7 +10,9 @@ import {
   getDunType,
   getXunShouInfo,
 } from '../lib/qimen/calendar';
-import { SAN_QI_LIU_YI, ROTATE_ORDER } from '../lib/qimen/constants';
+import { SAN_QI_LIU_YI, ROTATE_ORDER, STAR_NAMES, STAR_ORIGINAL_PALACE } from '../lib/qimen/constants';
+import { analyzeYongShen } from '../lib/qimen/interpretation/yongShenAnalysis';
+import { EVENT_TYPE_KEYS } from '../lib/qimen/interpretation/data/yongShen';
 
 // ─── 地盘排布测试 ────────────────────────────────────────────────────────────
 
@@ -374,5 +376,80 @@ describe('旬首六仪落中五宫', () => {
     }
     // 中五宫（惯例）与实际落宫都能被找到，而不是只有中五宫
     expect(found).toContain(8);
+  });
+});
+
+// ─── 用神取法（依据《神奇之门》下编各章第一节）──────────────────────────────
+
+describe('动态用神解析', () => {
+  // 本门断法的主线是「日干为求测之人，时干为所测之事」，随起盘时刻变化。
+  // 原模板以固定符号（戊为失物、乙为求职者）为主用神，与书上取用不合。
+  const chart = generateChart({
+    year: 1996, month: 3, day: 24, hour: 11, minute: 45, method: '拆补法',
+  });
+  // 书载：丙子年辛卯月庚申日壬午时（钱物丢失·实例三，书页 258）
+
+  it('每个角色的 targetSource 都能解析出非空目标', () => {
+    for (const key of EVENT_TYPE_KEYS) {
+      const result = analyzeYongShen(chart, key);
+      for (const loc of result.locations) {
+        expect(loc.role.target, `${key} 的「${loc.role.label}」解析出空目标`).not.toBe('');
+      }
+    }
+  });
+
+  it('失物寻找以日干为失主、时干为失物 —— 而非固定的戊', () => {
+    const r = analyzeYongShen(chart, '失物寻找');
+    const owner = r.locations.find(l => l.role.label === '失主')!;
+    const item = r.locations.find(l => l.role.label === '失物')!;
+    // 日柱庚申 → 日干庚；时柱壬午 → 时干壬
+    expect(owner.role.target).toBe('庚');
+    expect(item.role.target).toBe('壬');
+  });
+
+  it('考试求学以年干为录取学校、值符为主考官、值使为副主考官', () => {
+    const r = analyzeYongShen(chart, '考试求学');
+    const school = r.locations.find(l => l.role.label === '录取学校')!;
+    const chief = r.locations.find(l => l.role.label === '主考官')!;
+    const deputy = r.locations.find(l => l.role.label === '副主考官')!;
+    expect(school.role.target).toBe('丙');        // 年柱丙子
+    expect(chief.role.target).toBe(chart.zhiFu);
+    expect(deputy.role.target).toBe(chart.zhiShi);
+  });
+
+  it('求职面试以月干为同事、年干为上级领导、值符为顶头上司', () => {
+    const r = analyzeYongShen(chart, '求职面试');
+    expect(r.locations.find(l => l.role.label === '同事')!.role.target).toBe('辛');   // 月柱辛卯
+    expect(r.locations.find(l => l.role.label === '上级领导')!.role.target).toBe('丙');
+    expect(r.locations.find(l => l.role.label === '顶头上司')!.role.target).toBe(chart.zhiFu);
+  });
+
+  it('官讼诉讼的被告取天乙 —— 值符落宫的地盘原星，不是乙奇', () => {
+    // 书页 279 明确否定「以乙奇为被告」：「从易理上讲不通，经过实践验证也不准确」
+    const r = analyzeYongShen(chart, '官讼诉讼');
+    const defendant = r.locations.find(l => l.role.label === '被告')!;
+    expect(defendant.role.target).not.toBe('乙');
+    expect(STAR_NAMES).toContain(defendant.role.target as never);
+
+    // 天乙应是值符落宫的「本宫星」
+    let zhiFuPalace = 0;
+    for (let i = 1; i <= 9; i++) {
+      const p = chart.palaces[i as 1|2|3|4|5|6|7|8|9];
+      if (p.star === chart.zhiFu || p.lodgedStar === chart.zhiFu) zhiFuPalace = i;
+    }
+    expect(STAR_ORIGINAL_PALACE[defendant.role.target as keyof typeof STAR_ORIGINAL_PALACE])
+      .toBe(zhiFuPalace);
+  });
+
+  it('八神类用神可被定位（媒人六合、盗贼玄武、航线九天）', () => {
+    const deityRoles: [string, string][] = [
+      ['婚姻感情', '媒人'], ['失物寻找', '盗贼'], ['出行远行', '航线'],
+    ];
+    for (const [key, label] of deityRoles) {
+      const r = analyzeYongShen(chart, key as never);
+      const loc = r.locations.find(l => l.role.label === label)!;
+      expect(loc.role.type, `${key}·${label}`).toBe('deity');
+      expect(loc.palace, `${key}·${label} 未能定位`).not.toBeNull();
+    }
   });
 });

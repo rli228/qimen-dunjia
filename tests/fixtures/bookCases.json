@@ -503,6 +503,443 @@
       "note": "",
       "errata": null,
       "knownBug": null
+    },
+    {
+      "id": "szm-lost-01",
+      "chapter": "钱物丢失预测",
+      "label": "实例一：王建国测找发票",
+      "page": "256",
+      "datetime": {
+        "year": 1994,
+        "month": 12,
+        "day": 19,
+        "hour": 16,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "甲戌年丙子月己卯日壬申时",
+        "dunType": "阳遁",
+        "juNumber": 1,
+        "xunShou": "甲子",
+        "zhiFu": "天蓬",
+        "zhiFuPalace": 2,
+        "zhiShi": "休",
+        "zhiShiPalace": 9,
+        "yuan": null
+      },
+      "note": "超神法。1994 年冬至在 12-22，而本例起局于 12-19，冬至尚未交节。符头己卯（12-19 当日，卯属子午卯酉为上元）早于冬至 3 天，书按冬至上元起局得阳遁 1 局；拆补法此时仍在大雪节气内，取上元得阴遁 4 局，即本项目所算。书载「天蓬星为值符落 5 宫，寄 2 宫」—— 值符落中五宫寄坤二的情形。壬申时（15-17 时）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-lost-02",
+      "chapter": "钱物丢失预测",
+      "label": "实例二：王建国测身份证下落",
+      "page": "257",
+      "datetime": {
+        "year": 1995,
+        "month": 6,
+        "day": 7,
+        "hour": 18,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "乙亥年壬午月己巳日癸酉时",
+        "dunType": "阳遁",
+        "juNumber": 3,
+        "xunShou": "甲子",
+        "zhiFu": "天冲",
+        "zhiFuPalace": 8,
+        "zhiShi": "伤",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "伏吟局。书载「甲子戊在 3 宫」，可交叉验证六仪落宫；癸酉时（17-19 时）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-lost-03",
+      "chapter": "钱物丢失预测",
+      "label": "实例三：王建国测失钱",
+      "page": "258",
+      "datetime": {
+        "year": 1996,
+        "month": 3,
+        "day": 24,
+        "hour": 11,
+        "minute": 45
+      },
+      "stated": {
+        "siZhu": null,
+        "dunType": "阳遁",
+        "juNumber": 6,
+        "xunShou": "甲戌",
+        "zhiFu": "天柱",
+        "zhiFuPalace": 1,
+        "zhiShi": "惊",
+        "zhiShiPalace": 6,
+        "yuan": null
+      },
+      "note": "",
+      "errata": {
+        "field": "siZhu",
+        "printed": "丙子年辛卯月申申日壬午时",
+        "correct": "丙子年辛卯月庚申日壬午时",
+        "reason": "干支中并无「申申」一柱，系「庚」误印为「申」。旁证：书载局数（阳 6）、旬首（甲戌）与按庚申日推算的结果完全一致。"
+      },
+      "knownBug": null
+    },
+    {
+      "id": "szm-lost-04",
+      "chapter": "钱物丢失预测",
+      "label": "实例四：测丢失文件",
+      "page": "260",
+      "datetime": {
+        "year": 1997,
+        "month": 7,
+        "day": 18,
+        "hour": 12,
+        "minute": 3
+      },
+      "stated": {
+        "siZhu": "丁丑年丁未月辛酉日甲午时",
+        "dunType": "阴遁",
+        "juNumber": 5,
+        "xunShou": null,
+        "zhiFu": "天芮",
+        "zhiFuPalace": 2,
+        "zhiShi": "死",
+        "zhiShiPalace": 2,
+        "yuan": null
+      },
+      "note": "甲午时（甲遁辛），且星门俱伏吟 —— 双重边界",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-lost-05",
+      "chapter": "钱物丢失预测",
+      "label": "实例五：测汽车丢失",
+      "page": "261",
+      "datetime": {
+        "year": 1998,
+        "month": 2,
+        "day": 16,
+        "hour": 7,
+        "minute": 50
+      },
+      "stated": {
+        "siZhu": "戊寅年甲寅月甲午日戊辰时",
+        "dunType": "阳遁",
+        "juNumber": 8,
+        "xunShou": "甲子",
+        "zhiFu": "天任",
+        "zhiFuPalace": 8,
+        "zhiShi": "生",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "日柱为甲午",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-health-01",
+      "chapter": "人体疾病预测",
+      "label": "实例一：测动过手术",
+      "page": "151",
+      "datetime": {
+        "year": 1996,
+        "month": 3,
+        "day": 16,
+        "hour": 16,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "丙子年辛卯月壬子日戊申时",
+        "dunType": "阳遁",
+        "juNumber": 3,
+        "xunShou": "甲辰",
+        "zhiFu": "天柱",
+        "zhiFuPalace": 3,
+        "zhiShi": "惊",
+        "zhiShiPalace": 2,
+        "yuan": null
+      },
+      "note": "书上明确写「用置闰法起阳遁 3 局」—— 全书唯一点名定局法的案例，本项目默认拆补法，预期不符。戊申时（15-17 时）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-health-02",
+      "chapter": "人体疾病预测",
+      "label": "实例二：女测父病（天禽值符 + 伏吟 + 甲申时）",
+      "page": "153",
+      "datetime": {
+        "year": 1996,
+        "month": 7,
+        "day": 27,
+        "hour": 16,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "丙子年乙未月乙丑日甲申时",
+        "dunType": "阴遁",
+        "juNumber": 7,
+        "xunShou": "甲申",
+        "zhiFu": "天禽",
+        "zhiFuPalace": 2,
+        "zhiShi": "死",
+        "zhiShiPalace": 2,
+        "yuan": null
+      },
+      "note": "三重边界：值符为天禽、星门俱伏吟、时干为甲申（遁庚）。书未明写值符落宫，但盘面显示值符神在坤 2，天禽寄坤二故记为 2 宫",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-health-03",
+      "chapter": "人体疾病预测",
+      "label": "实例三：测何时出院",
+      "page": "154",
+      "datetime": {
+        "year": 1996,
+        "month": 5,
+        "day": 9,
+        "hour": 16,
+        "minute": 20
+      },
+      "stated": {
+        "siZhu": "丙子年癸巳月丙午日丙申时",
+        "dunType": "阳遁",
+        "juNumber": 7,
+        "xunShou": "甲午",
+        "zhiFu": "天蓬",
+        "zhiFuPalace": 2,
+        "zhiShi": "休",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-health-04",
+      "chapter": "人体疾病预测",
+      "label": "实例四：王建国测冯春萍姨母病",
+      "page": "155",
+      "datetime": {
+        "year": 1996,
+        "month": 5,
+        "day": 23,
+        "hour": 20,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "丙子年癸巳月庚申日丙戌时",
+        "dunType": "阳遁",
+        "juNumber": 8,
+        "xunShou": "甲申",
+        "zhiFu": "天蓬",
+        "zhiFuPalace": 6,
+        "zhiShi": "休",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "书载「5 月 23 日晚上打电话」，丙戌时（19-21 时）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-health-05",
+      "chapter": "人体疾病预测",
+      "label": "实例五：测外出求医",
+      "page": "157",
+      "datetime": {
+        "year": 1997,
+        "month": 12,
+        "day": 27,
+        "hour": 21,
+        "minute": 30
+      },
+      "stated": {
+        "siZhu": "丁丑年壬子月癸卯日癸亥时",
+        "dunType": "阳遁",
+        "juNumber": 7,
+        "xunShou": "甲寅",
+        "zhiFu": "天冲",
+        "zhiFuPalace": 3,
+        "zhiShi": "伤",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "星门俱伏吟。书载「晚上 9 点多」，癸亥时（21-23 时）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-health-06",
+      "chapter": "人体疾病预测",
+      "label": "实例六：当场测病",
+      "page": "158",
+      "datetime": {
+        "year": 1996,
+        "month": 11,
+        "day": 2,
+        "hour": 16,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "丙子年戊戌月癸卯日庚申时",
+        "dunType": "阴遁",
+        "juNumber": 8,
+        "xunShou": "甲寅",
+        "zhiFu": "天冲",
+        "zhiFuPalace": 6,
+        "zhiShi": "伤",
+        "zhiShiPalace": 6,
+        "yuan": null
+      },
+      "note": "",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-law-01",
+      "chapter": "官司诉讼预测",
+      "label": "实例一：杜新会测官司",
+      "page": "280",
+      "datetime": {
+        "year": 1995,
+        "month": 5,
+        "day": 6,
+        "hour": 21,
+        "minute": 20
+      },
+      "stated": {
+        "siZhu": "乙亥年辛巳月丁酉日辛亥时",
+        "dunType": "阳遁",
+        "juNumber": 4,
+        "xunShou": "甲辰",
+        "zhiFu": "天任",
+        "zhiFuPalace": 7,
+        "zhiShi": "生",
+        "zhiShiPalace": 6,
+        "yuan": null
+      },
+      "note": "",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-law-02",
+      "chapter": "官司诉讼预测",
+      "label": "实例二：杜新会测拘留",
+      "page": "281",
+      "datetime": {
+        "year": 1995,
+        "month": 12,
+        "day": 14,
+        "hour": 10,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "乙亥年戊子月己卯日己巳时",
+        "dunType": "阳遁",
+        "juNumber": 1,
+        "xunShou": "甲子",
+        "zhiFu": "天蓬",
+        "zhiFuPalace": 2,
+        "zhiShi": "休",
+        "zhiShiPalace": 6,
+        "yuan": null
+      },
+      "note": "超神法。1995 年冬至在 12-22，本例起局于 12-14，冬至尚未交节。符头己卯（当日，卯为上元）早于冬至 8 天，书按冬至上元起局得阳遁 1 局；拆补法此时仍在大雪，取上元得阴遁 4 局，即本项目所算。书页 63 正好讨论过这次超神：「1995 年冬至前符头超神并未超过九天，只刚达到 9 天头上」。",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-law-03",
+      "chapter": "官司诉讼预测",
+      "label": "实例三：测房产纠纷",
+      "page": "282-283",
+      "datetime": {
+        "year": 1996,
+        "month": 12,
+        "day": 11,
+        "hour": 9,
+        "minute": 10
+      },
+      "stated": {
+        "siZhu": "丙子年庚子月壬午日乙巳时",
+        "dunType": "阴遁",
+        "juNumber": 4,
+        "xunShou": "甲辰",
+        "zhiFu": "天英",
+        "zhiFuPalace": 2,
+        "zhiShi": "景",
+        "zhiShiPalace": 8,
+        "yuan": null
+      },
+      "note": "书载「天英星为值符落 5 宫，寄 2 宫」，此处记为寄宫后的 2 宫",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-law-04",
+      "chapter": "官司诉讼预测",
+      "label": "实例四：四川学员李文达测官讼例",
+      "page": "284",
+      "datetime": {
+        "year": 1997,
+        "month": 4,
+        "day": 25,
+        "hour": 1,
+        "minute": 30
+      },
+      "stated": {
+        "siZhu": "丁丑年甲辰月丁酉日辛丑时",
+        "dunType": "阳遁",
+        "juNumber": 5,
+        "xunShou": "甲午",
+        "zhiFu": "天任",
+        "zhiFuPalace": 8,
+        "zhiShi": "生",
+        "zhiShiPalace": 6,
+        "yuan": null
+      },
+      "note": "凌晨丑时 —— 测试子时后的日柱归属边界；星门俱伏吟",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-law-05",
+      "chapter": "官司诉讼预测",
+      "label": "实例五：测判刑",
+      "page": "285",
+      "datetime": {
+        "year": 1997,
+        "month": 1,
+        "day": 22,
+        "hour": 22,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "丙子年辛丑月甲子日乙亥时",
+        "dunType": "阳遁",
+        "juNumber": 3,
+        "xunShou": "甲戌",
+        "zhiFu": "天辅",
+        "zhiFuPalace": 2,
+        "zhiShi": "杜",
+        "zhiShiPalace": 2,
+        "yuan": null
+      },
+      "note": "日柱甲子；书载「杜门为值使落 5 宫，寄 2 宫」，此处记为寄宫后的 2 宫",
+      "errata": null,
+      "knownBug": null
     }
   ]
 }

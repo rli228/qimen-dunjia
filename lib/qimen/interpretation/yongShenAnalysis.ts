@@ -11,7 +11,7 @@
 
 import type { QimenChart } from '../types';
 import type { PalaceIndex, GateName, StarName, SanQiLiuYi } from '../constants';
-import { PALACE_NAMES, PALACE_WUXING, STAR_FORTUNE, GATE_FORTUNE, JIA_HIDDEN } from '../constants';
+import { PALACE_NAMES, PALACE_WUXING, STAR_FORTUNE, GATE_FORTUNE, JIA_HIDDEN, STAR_ORIGINAL_PALACE } from '../constants';
 import { GATE_WUXING, JIEQI_WUXING, getVitality } from './data/gateWuxing';
 import type { EventTypeKey, YongShenRole } from './data/yongShen';
 import { EVENT_TEMPLATES } from './data/yongShen';
@@ -99,12 +99,29 @@ function ganToSanQi(gan: string, zhi: string): string {
   return gan;
 }
 
+/** 天乙 —— 值符落宫的**地盘原星**，官司类以之为被告 */
+function resolveTianYi(chart: QimenChart): string {
+  for (let i = 1; i <= 9; i++) {
+    const idx = i as PalaceIndex;
+    const p = chart.palaces[idx];
+    if (p.star !== chart.zhiFu && p.lodgedStar !== chart.zhiFu) continue;
+    // 该宫的原星即天乙；中五宫寄坤二，原星取天禽
+    const home = Object.entries(STAR_ORIGINAL_PALACE).find(([, pal]) => pal === idx);
+    return home ? home[0] : '天禽';
+  }
+  return chart.zhiFu;
+}
+
 function resolveTarget(chart: QimenChart, role: YongShenRole): string {
   if (!role.targetSource) return role.target;
   switch (role.targetSource) {
     case 'dayGan': return ganToSanQi(chart.siZhu.day.gan, chart.siZhu.day.zhi);
     case 'hourGan': return ganToSanQi(chart.siZhu.hour.gan, chart.siZhu.hour.zhi);
+    case 'yearGan': return ganToSanQi(chart.siZhu.year.gan, chart.siZhu.year.zhi);
+    case 'monthGan': return ganToSanQi(chart.siZhu.month.gan, chart.siZhu.month.zhi);
     case 'zhiFu': return chart.zhiFu;
+    case 'zhiShi': return chart.zhiShi;
+    case 'tianYi': return resolveTianYi(chart);
     default: return role.target;
   }
 }
@@ -138,6 +155,11 @@ function locateYongShen(chart: QimenChart, role: YongShenRole): YongShenLocation
     } else if (role.type === 'star') {
       // 天禽寄宫于天芮所在宫，只比对 star 会让它永远停在中五宫
       if (p.star === target || p.lodgedStar === target) {
+        foundPalace = idx;
+        break;
+      }
+    } else if (role.type === 'deity') {
+      if (p.deity === target) {
         foundPalace = idx;
         break;
       }
