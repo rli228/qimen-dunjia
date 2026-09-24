@@ -35,10 +35,12 @@ function buildSystemPrompt(): string {
 
 【工作流程】
 a) analyze_yongshen —— 拿到用神落宫、旺衰、关系、规则引擎 tier
-b) detect_patterns —— 看有没有会改变大势的格局
-c) inspect_palace —— 对关键用神所在宫位逐个细查
-d) search_cases / search_classics —— 找同类断法佐证。案例的盘面与当前盘不同，只能借鉴断法逻辑，不可照搬结论
-e) ${SUBMIT_TOOL_NAME} —— 交卷
+b) analyze_timing —— 用户问「什么时候」「多久」「几号」时必须调用；即使没明问，
+   给出应期也让结论可验证得多
+c) detect_patterns —— 看有没有会改变大势的格局
+d) inspect_palace —— 对关键用神所在宫位逐个细查
+e) search_cases / search_classics —— 找同类断法佐证。案例的盘面与当前盘不同，只能借鉴断法逻辑，不可照搬结论
+f) ${SUBMIT_TOOL_NAME} —— 交卷
 
 【表达要求】
 - 用条件式语言，不要做绝对断言。"盘面显示…倾向于…" 而非 "一定会…"。

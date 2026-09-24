@@ -10,7 +10,7 @@
 
 import { z } from 'zod';
 import type { AgentTool } from './registry';
-import { analyzeYongShenTool, detectPatternsTool, inspectPalaceTool, analyzeMarriageTool } from './qimenTools';
+import { analyzeYongShenTool, detectPatternsTool, inspectPalaceTool, analyzeMarriageTool, analyzeTimingTool } from './qimenTools';
 import { searchCasesTool, searchClassicsTool } from './knowledgeTools';
 
 export { toToolSpec, runTool } from './registry';
@@ -19,6 +19,7 @@ export type { ToolContext, AgentTool } from './registry';
 /** 通用工具集（所有事类都可用） */
 export const BASE_TOOLS: AgentTool[] = [
   analyzeYongShenTool as AgentTool,
+  analyzeTimingTool as AgentTool,
   detectPatternsTool as AgentTool,
   inspectPalaceTool as AgentTool,
   searchCasesTool as AgentTool,

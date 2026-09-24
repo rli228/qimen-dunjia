@@ -12,6 +12,7 @@ import { PALACE_NAMES, PALACE_WUXING, STAR_FORTUNE, GATE_FORTUNE } from '@/lib/q
 import type { PalaceIndex } from '@/lib/qimen/constants';
 import { interpretChart } from '@/lib/qimen/interpretation/index';
 import { analyzeYongShen } from '@/lib/qimen/interpretation/yongShenAnalysis';
+import { analyzeTiming } from '@/lib/qimen/interpretation/timing';
 import { analyzeMarriage } from '@/lib/qimen/interpretation/marriageAnalysis';
 import { EVENT_TYPE_KEYS, EVENT_TEMPLATES } from '@/lib/qimen/interpretation/data/yongShen';
 import type { EventTypeKey } from '@/lib/qimen/interpretation/data/yongShen';
@@ -191,6 +192,58 @@ export const analyzeMarriageTool = defineTool({
       lines.push('细节：');
       for (const d of r.details) lines.push(`- ${d}`);
     }
+
+    return lines.join('\n');
+  },
+});
+
+// ─── 定应期 ──────────────────────────────────────────────────────────────────
+
+export const analyzeTimingTool = defineTool({
+  name: 'analyze_timing',
+  description:
+    '推算应期 —— 事情大约在什么时候发生。返回远近快慢判断，以及多条带出处的应期候选' +
+    '（值使门所临之干、值使门与时干所落宫数、旬空填实/冲实、六仪所带地支冲合、日时支三合六合）。' +
+    '用户问「什么时候」「多久」「几号」时必须调用。' +
+    '注意：书上列了 13 种定应期方法，本工具只实现可由盘面确定性推出的部分，' +
+    '未实现的会在 notImplemented 中列明 —— 不要假装用了那些方法。',
+  schema: z.object({
+    eventType: eventTypeEnum.optional().describe('事类，用于取用神落宫判断远近，缺省为当前事类'),
+  }),
+  run: (input, ctx) => {
+    const eventType = input.eventType ?? ctx.eventType;
+    const ys = analyzeYongShen(ctx.chart, eventType);
+    const palaces = ys.locations
+      .map(l => l.palace)
+      .filter((p): p is PalaceIndex => p !== null);
+
+    const r = analyzeTiming(ctx.chart, palaces);
+    const lines: string[] = [];
+
+    lines.push(`【应期推算】依据《神奇之门》中编第六章第五节（书页 147-149）`);
+    lines.push(`远近快慢：${r.distance}　建议时间单位：${r.suggestedUnit}`);
+    for (const b of r.distanceBasis) lines.push(`  · ${b}`);
+    lines.push('');
+
+    const primary = r.candidates.filter(c => c.priority === '主');
+    const secondary = r.candidates.filter(c => c.priority === '次');
+
+    const render = (c: typeof r.candidates[number]) =>
+      `- ${c.value}（${c.unit}）\n    方法：${c.method}\n    依据：${c.basis}\n    说明：${c.explanation}`;
+
+    if (primary.length) {
+      lines.push('主（书页 148 原则三：先以值符定应期）：');
+      for (const c of primary) lines.push(render(c));
+      lines.push('');
+    }
+    if (secondary.length) {
+      lines.push('次（再以值使定应期）：');
+      for (const c of secondary) lines.push(render(c));
+      lines.push('');
+    }
+
+    lines.push('本工具未实现的方法（不要声称用了它们）：');
+    for (const n of r.notImplemented) lines.push(`  · ${n}`);
 
     return lines.join('\n');
   },
