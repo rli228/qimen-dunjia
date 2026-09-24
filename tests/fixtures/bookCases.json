@@ -309,6 +309,200 @@
       "note": "书上明确写出「霜降上元」，是少数直接断言三元的案例；戊申时（15-17 时）",
       "errata": null,
       "knownBug": null
+    },
+    {
+      "id": "szm-sport-01",
+      "chapter": "体育竞赛预测",
+      "label": "实例一：测第四十三届世乒赛女子团体决赛",
+      "page": "290-291",
+      "datetime": {
+        "year": 1995,
+        "month": 5,
+        "day": 7,
+        "hour": 20,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "乙亥年辛巳月戊戌日壬戌时",
+        "dunType": "阳遁",
+        "juNumber": 4,
+        "xunShou": "甲寅",
+        "zhiFu": "天英",
+        "zhiFuPalace": 8,
+        "zhiShi": "景",
+        "zhiShiPalace": 8,
+        "yuan": null
+      },
+      "note": "书载「晚7点至9点」，壬戌时（19-21 时）。本例即 seedCases.json 中的 seed-1995-05-07-sports",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-sport-02a",
+      "chapter": "体育竞赛预测",
+      "label": "实例二：世乒赛男子团体决赛（甲戌时，星门俱伏吟）",
+      "page": "292",
+      "datetime": {
+        "year": 1995,
+        "month": 5,
+        "day": 8,
+        "hour": 20,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "乙亥年辛巳月己亥日甲戌时",
+        "dunType": "阳遁",
+        "juNumber": 1,
+        "xunShou": "甲戌",
+        "zhiFu": "天芮",
+        "zhiFuPalace": 2,
+        "zhiShi": "死",
+        "zhiShiPalace": 2,
+        "yuan": null
+      },
+      "note": "书载「甲戌在2宫，天芮为值符，死门为值使，星门俱伏吟」—— 伏吟局，且时干为甲戌（遁己），双重边界",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-sport-02b",
+      "chapter": "体育竞赛预测",
+      "label": "实例二续：改看乙亥时",
+      "page": "292",
+      "datetime": {
+        "year": 1995,
+        "month": 5,
+        "day": 8,
+        "hour": 22,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "乙亥年辛巳月己亥日乙亥时",
+        "dunType": "阳遁",
+        "juNumber": 1,
+        "xunShou": "甲戌",
+        "zhiFu": "天芮",
+        "zhiFuPalace": 9,
+        "zhiShi": "死",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "同日次一时辰。书载「地盘时干乙在9宫，天盘时干乙落4宫」，可交叉验证天地盘干",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-sport-03",
+      "chapter": "体育竞赛预测",
+      "label": "实例三：测世乒赛男单决赛",
+      "page": "293",
+      "datetime": {
+        "year": 1995,
+        "month": 5,
+        "day": 14,
+        "hour": 18,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "乙亥年辛巳月乙巳日乙酉时",
+        "dunType": "阳遁",
+        "juNumber": 7,
+        "xunShou": "甲申",
+        "zhiFu": "天英",
+        "zhiFuPalace": 6,
+        "zhiShi": "景",
+        "zhiShiPalace": 1,
+        "yuan": null
+      },
+      "note": "书载「天英星落6宫，景门落1宫」，未明写「值符/值使」二字，但位置与行文格式与其余各例一致；乙酉时（17-19 时）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-sport-04",
+      "chapter": "体育竞赛预测",
+      "label": "实例四：测中国队获金牌数",
+      "page": "295",
+      "datetime": {
+        "year": 1996,
+        "month": 7,
+        "day": 18,
+        "hour": 22,
+        "minute": 30
+      },
+      "stated": {
+        "siZhu": "丙子年乙未月丙辰日己亥时",
+        "dunType": "阴遁",
+        "juNumber": 2,
+        "xunShou": "甲午",
+        "zhiFu": "天任",
+        "zhiFuPalace": 1,
+        "zhiShi": "生",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "阴遁局。本例是河图数定量预测的出处（辛落坎1宫，一、六数 → 断十枚或十六枚，实际 16 枚）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-sport-05",
+      "chapter": "体育竞赛预测",
+      "label": "实例五：杜新会测世界杯半决赛（巴西对荷兰）",
+      "page": "296",
+      "datetime": {
+        "year": 1998,
+        "month": 7,
+        "day": 7,
+        "hour": 10,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": null,
+        "dunType": "阴遁",
+        "juNumber": 2,
+        "xunShou": "甲戌",
+        "zhiFu": "天蓬",
+        "zhiFuPalace": 8,
+        "zhiShi": "休",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "",
+      "errata": {
+        "field": "siZhu",
+        "printed": "戊寅年己未月乙卯日辛巳时",
+        "correct": "戊寅年戊午月乙卯日辛巳时",
+        "reason": "1998 年小暑交节于 07-07 15:30:25，而本例起局时刻为当日 10:00，小暑尚未到，月柱应为芒种月戊午而非小暑月己未。年日时三柱与书一致。书上月柱写作己未，与它同时按小暑起局（阴 2 局 = 小暑中元）是自洽的 —— 即该案按「节气以日为界」归属；本项目月柱按交节时刻判定，故此处不同。详见下方「节气边界」说明。"
+      },
+      "knownBug": null
+    },
+    {
+      "id": "szm-sport-06",
+      "chapter": "体育竞赛预测",
+      "label": "实例六：杜新会测法国与克罗地亚半决赛",
+      "page": "297",
+      "datetime": {
+        "year": 1998,
+        "month": 7,
+        "day": 8,
+        "hour": 8,
+        "minute": 40
+      },
+      "stated": {
+        "siZhu": "戊寅年己未月丙辰日壬辰时",
+        "dunType": "阴遁",
+        "juNumber": 2,
+        "xunShou": "甲申",
+        "zhiFu": "天英",
+        "zhiFuPalace": 7,
+        "zhiShi": "景",
+        "zhiShiPalace": 1,
+        "yuan": null
+      },
+      "note": "",
+      "errata": null,
+      "knownBug": null
     }
   ]
 }

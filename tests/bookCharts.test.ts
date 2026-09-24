@@ -26,7 +26,7 @@ interface BookCase {
   page: string;
   datetime: { year: number; month: number; day: number; hour: number; minute: number };
   stated: {
-    siZhu: string;
+    siZhu: string | null;
     dunType: string | null;
     juNumber: number | null;
     xunShou: string | null;
@@ -52,13 +52,19 @@ const lodge = (p: number) => (p === 5 ? 2 : p);
 function locate(chart: ReturnType<typeof generateChart>) {
   let zhiFuPalace = 0;
   let zhiShiPalace = 0;
+  let lodgedPalace = 0;
+
   for (let i = 1; i <= 9; i++) {
     const p = chart.palaces[i as PalaceIndex];
-    // 值符为天禽时寄在天芮宫，只比对 star 会误报中五宫
-    if (p.star === chart.zhiFu || p.lodgedStar === chart.zhiFu) zhiFuPalace = i;
-    if (p.gate === chart.zhiShi) zhiShiPalace = i;
+    if (p.lodgedStar === chart.zhiFu) lodgedPalace = i;
+    if (p.star === chart.zhiFu) zhiFuPalace = i;
+    // 中五宫无门；Palace.gate 是必填字段，那里填的「死」只是占位，
+    // 不跳过会在值使恰为死门时把中五宫误判成它的落宫
+    if (i !== 5 && p.gate === chart.zhiShi) zhiShiPalace = i;
   }
-  return { zhiFuPalace, zhiShiPalace };
+
+  // 值符为天禽时，中五宫按惯例也显示天禽，但它的实际落宫由 lodgedStar 标出
+  return { zhiFuPalace: lodgedPalace || zhiFuPalace, zhiShiPalace };
 }
 
 function siZhuOf(chart: ReturnType<typeof generateChart>): string {
@@ -69,10 +75,10 @@ function siZhuOf(chart: ReturnType<typeof generateChart>): string {
 describe('《神奇之门》书载盘面批量核对', () => {
   // ── 一级：四柱。与定局法无关，不符即为历法 bug ──
   describe('四柱（历法，任何流派都应一致）', () => {
-    for (const c of CASES) {
+    for (const c of CASES.filter(x => x.stated.siZhu)) {
       it(`${c.id} ${c.label}（书页 ${c.page}）`, () => {
         const chart = generateChart({ ...c.datetime, method: '拆补法' });
-        expect(siZhuOf(chart)).toBe(c.stated.siZhu);
+        expect(siZhuOf(chart)).toBe(c.stated.siZhu!);
       });
     }
   });
@@ -93,7 +99,8 @@ describe('《神奇之门》书载盘面批量核对', () => {
       const e = c.errata!;
       it(`${c.id} ${e.field}：书印「${e.printed}」，应为「${e.correct}」`, () => {
         const chart = generateChart({ ...c.datetime, method: '拆补法' });
-        expect(chart[e.field as 'xunShou']).toBe(e.correct);
+        const actual = e.field === 'siZhu' ? siZhuOf(chart) : chart[e.field as 'xunShou'];
+        expect(actual).toBe(e.correct);
       });
     }
   });
