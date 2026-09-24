@@ -317,3 +317,62 @@ describe('书载盘面核对：张志春《神奇之门》恋爱婚姻·实例�
     }
   });
 });
+
+// ─── 六仪入中宫（天禽值符 / 值使起点）──────────────────────────────────────
+
+describe('旬首六仪落中五宫', () => {
+  // 六仪入中时，值符是天禽、值使由寄宫坤二反查得出。这两条路径原先都错：
+  // 天禽不随转盘移动，值使又从坤二而非中五起步。
+  // 六仪不在中宫时两者恰好等价，所以这个分支长期无人触及。
+
+  it('天禽为值符时随天芮寄宫，不再卡在中五宫', () => {
+    // 《神奇之门》工作就业·实例一（书页 191）：
+    // 「丙子年庚寅月丙子日丁酉时，阳2局，甲午辛在5宫，天禽星为值符，落8宫，死门为值使落8宫」
+    const chart = generateChart({
+      year: 1996, month: 2, day: 9, hour: 18, minute: 0, method: '拆补法',
+    });
+    expect(chart.zhiFu).toBe('天禽');
+    // 时干丁在地盘艮八宫，值符转到此处
+    expect(chart.palaces[8].diPanGan).toBe('丁');
+    expect(chart.palaces[8].lodgedStar).toBe('天禽');
+    // 天禽与天芮同宫而行
+    expect(chart.palaces[8].star).toBe('天芮');
+    // 中五宫仍显示天禽（排盘惯例），但那不是它的落宫
+    expect(chart.palaces[5].star).toBe('天禽');
+    expect(chart.palaces[5].lodgedStar).toBeUndefined();
+  });
+
+  it('值使从六仪所在的中五宫起步，而非从门本宫坤二', () => {
+    // 同上例：值使死门走 3 步（丁酉为甲午旬第 3 位），5→6→7→8，落艮八宫
+    const chart = generateChart({
+      year: 1996, month: 2, day: 9, hour: 18, minute: 0, method: '拆补法',
+    });
+    expect(chart.zhiShi).toBe('死');
+    expect(chart.palaces[8].gate).toBe('死');
+  });
+
+  it('另一例：走 1 步落乾六宫', () => {
+    // 工作就业·实例四（书页 196）：
+    // 「丁丑年甲辰月丁亥日乙巳时，阳1局，甲辰旬，天禽星值符落9宫，死门值使落6宫」
+    const chart = generateChart({
+      year: 1997, month: 4, day: 15, hour: 10, minute: 0, method: '拆补法',
+    });
+    expect(chart.zhiFu).toBe('天禽');
+    expect(chart.palaces[9].lodgedStar).toBe('天禽');   // 时干乙在离九宫
+    expect(chart.zhiShi).toBe('死');
+    expect(chart.palaces[6].gate).toBe('死');           // 5→6，一步
+  });
+
+  it('按星名查找宫位时能找到寄宫的天禽 —— 失物寻找事类以天禽为用神', () => {
+    const chart = generateChart({
+      year: 1996, month: 2, day: 9, hour: 18, minute: 0, method: '拆补法',
+    });
+    const found: number[] = [];
+    for (let i = 1; i <= 9; i++) {
+      const p = chart.palaces[i as 1|2|3|4|5|6|7|8|9];
+      if (p.star === '天禽' || p.lodgedStar === '天禽') found.push(i);
+    }
+    // 中五宫（惯例）与实际落宫都能被找到，而不是只有中五宫
+    expect(found).toContain(8);
+  });
+});

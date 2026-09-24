@@ -54,7 +54,8 @@ function locate(chart: ReturnType<typeof generateChart>) {
   let zhiShiPalace = 0;
   for (let i = 1; i <= 9; i++) {
     const p = chart.palaces[i as PalaceIndex];
-    if (p.star === chart.zhiFu) zhiFuPalace = i;
+    // 值符为天禽时寄在天芮宫，只比对 star 会误报中五宫
+    if (p.star === chart.zhiFu || p.lodgedStar === chart.zhiFu) zhiFuPalace = i;
     if (p.gate === chart.zhiShi) zhiShiPalace = i;
   }
   return { zhiFuPalace, zhiShiPalace };

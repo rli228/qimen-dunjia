@@ -133,6 +133,8 @@ export function layoutTianPan(
 ): {
   tianPanGan: Record<PalaceIndex, SanQiLiuYi>;
   starPalaces: Record<PalaceIndex, StarName>;
+  /** 天禽的实际落宫（随天芮）。中五宫显示的天禽只是惯例 */
+  qinPalace: PalaceIndex;
 } {
   const shiGan = resolveShiGan(hourGan, hourZhi);
 
@@ -166,18 +168,17 @@ export function layoutTianPan(
     }
   }
 
-  // 中五宫：天禽星寄坤二宫，天盘干取中宫地盘干
-  // 天禽星随值符转动，如果值符不是天禽，天禽寄到坤二宫
-  if (zhiFu !== '天禽') {
-    // 天禽跟随值符落宫
-    starPalaces[targetPalace === 5 ? 2 : targetPalace] =
-      starPalaces[targetPalace === 5 ? 2 : targetPalace] || '天禽';
-  }
-  // 中宫的天盘干
+  // 天禽寄坤二宫，故与天芮同坐一个转位 —— 天芮转到哪，天禽就在哪。
+  // 原先这里只在「值符不是天禽」时才填，而那个分支又被 || 短路成永不生效，
+  // 于是天禽从不移动。值符恰为天禽时（旬首六仪落中五宫）后果最直接：
+  // 值符落宫整个找不到。
+  const qinPalace = ROTATE_ORDER[(ROTATE_ORDER.indexOf(2) + steps) % 8];
+
+  // 中宫的天盘干；中五宫仍显示天禽，这是排盘惯例而非它的实际落宫
   tianPanGan[5] = diPan[5];
   starPalaces[5] = '天禽';
 
-  return { tianPanGan, starPalaces };
+  return { tianPanGan, starPalaces, qinPalace };
 }
 
 // ─── 人盘排布（小值符法） ────────────────────────────────────────────────────
@@ -196,6 +197,14 @@ const GATE_CYCLE: Exclude<GateName, '中'>[] = ['休', '生', '伤', '杜', '景
  */
 export function layoutRenPan(
   zhiShi: Exclude<GateName, '中'>,
+  /**
+   * 旬首六仪在地盘的落宫 —— 值使转动的起点。
+   *
+   * 不能拿值使门的本宫代替：六仪落中五宫时，值使门是由寄宫（坤二）反查出来的，
+   * 此时门本宫（坤2）与六仪宫（中5）不是同一宫，从坤二起步会整体差一位。
+   * 六仪不在中宫时两者恰好相同，所以这个差异只在六仪入中时暴露。
+   */
+  yiPalace: PalaceIndex,
   hourGan: TianGan,
   dunType: '阳遁' | '阴遁',
 ): Record<PalaceIndex, Exclude<GateName, '中'>> {
@@ -203,11 +212,10 @@ export function layoutRenPan(
   const direction = dunType === '阳遁' ? 1 : -1;
 
   const zhiShiCycleIdx = GATE_CYCLE.indexOf(zhiShi);
-  const zhiShiOriginal = GATE_ORIGINAL_PALACE[zhiShi];
 
-  // 值使目标宫：用 mod 9（含中宫）计算
-  let target = ((zhiShiOriginal - 1 + ganIndex * direction) % 9 + 9) % 9 + 1;
-  if (target === 5) target = 2; // 中五宫寄坤二宫
+  // 值使目标宫：从六仪宫起，按洛书宫序（含中五宫）走时辰数
+  let target = ((yiPalace - 1 + ganIndex * direction) % 9 + 9) % 9 + 1;
+  if (target === 5) target = 2; // 落中五宫则寄坤二宫
 
   // 从值使目标宫开始，沿 ROTATE_ORDER（空间顺/逆时针）依次排列八门
   const startIdx = ROTATE_ORDER.indexOf(target as PalaceIndex);
@@ -275,13 +283,13 @@ export function generateChart(input: ChartInput): QimenChart {
   const { xunShou, kongWang, xunShouYi } = getXunShouInfo(siZhu.hour.gan, siZhu.hour.zhi);
 
   // 6. 值符值使（由旬首六仪决定）
-  const { zhiFu, zhiShi } = getZhiFuZhiShi(xunShouYi as SanQiLiuYi, diPan);
+  const { zhiFu, zhiShi, zhiFuOriginalPalace: yiPalace } = getZhiFuZhiShi(xunShouYi as SanQiLiuYi, diPan);
 
   // 7. 天盘（九星 + 天盘干）
-  const { tianPanGan, starPalaces } = layoutTianPan(diPan, zhiFu, hourGan, hourZhi, dunType);
+  const { tianPanGan, starPalaces, qinPalace } = layoutTianPan(diPan, zhiFu, hourGan, hourZhi, dunType);
 
   // 8. 人盘（八门 — 小值符法，阳遁顺时针/阴遁逆时针）
-  const gatePalaces = layoutRenPan(zhiShi, hourGan, dunType);
+  const gatePalaces = layoutRenPan(zhiShi, yiPalace, hourGan, dunType);
 
   // 9. 值符落宫（用于神盘）— 时干在地盘的位置，与天盘的转动目标必须是同一宫
   const zhiFuTarget = findShiGanPalace(diPan, resolveShiGan(hourGan, hourZhi));
@@ -299,6 +307,8 @@ export function generateChart(input: ChartInput): QimenChart {
       diPanGan: diPan[idx],
       tianPanGan: tianPanGan[idx] || diPan[idx], // 中宫天盘干
       star: starPalaces[idx] || '天禽',
+      // 天禽随天芮寄宫；中五宫自身已显示天禽，不再重复标注
+      ...(idx === qinPalace && idx !== 5 ? { lodgedStar: '天禽' as StarName } : {}),
       gate: gatePalaces[idx] || '死', // 中宫无门，默认
       deity: deityPalaces[idx] || '值符',
       isEmpty: false, // 后续计算

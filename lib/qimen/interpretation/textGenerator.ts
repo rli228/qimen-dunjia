@@ -332,7 +332,8 @@ function buildSummary(chart: QimenChart, result: InterpretationResult): TextSect
 
 function findStarPalace(chart: QimenChart, star: string): PalaceIndex | null {
   for (let i = 1; i <= 9; i++) {
-    if (chart.palaces[i as PalaceIndex].star === star) return i as PalaceIndex;
+    const p = chart.palaces[i as PalaceIndex];
+    if (p.star === star || p.lodgedStar === star) return i as PalaceIndex;
   }
   return null;
 }
