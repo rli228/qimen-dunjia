@@ -81,6 +81,49 @@ export function toJsonSchema(schema: z.ZodType): Record<string, unknown> {
 /** 三个 agent 的默认模型。分类器任务简单，想省钱可单独降到 claude-haiku-4-5 */
 export const ANTHROPIC_MODEL = 'claude-opus-5';
 
+/**
+ * 归一化对话 → Anthropic 消息。
+ *
+ * 独立成函数是为了能直接对它写测试 —— 这里的两条约束违反了就是 400，
+ * 而且在真实调用之前发现不了：
+ *  1. 每个 tool_use 必须由紧随其后的 user 消息中的 tool_result 应答（由 analyst 保证）；
+ *  2. 消息的 content 不能为空数组。
+ */
+export function toAnthropicMessages(turns: AgentTurn[]): Anthropic.MessageParam[] {
+  return turns.map((turn): Anthropic.MessageParam => {
+    if (turn.role === 'user') {
+      return { role: 'user', content: turn.text };
+    }
+    if (turn.role === 'tool_results') {
+      // 同一轮的所有 tool_result 必须打包进一条 user 消息，
+      // 拆开会让模型逐渐放弃并行调用工具
+      return {
+        role: 'user',
+        content: turn.results.map((r): Anthropic.ToolResultBlockParam => ({
+          type: 'tool_result',
+          tool_use_id: r.id,
+          content: r.text,
+          ...(r.isError ? { is_error: true } : {}),
+        })),
+      };
+    }
+    const blocks: Anthropic.ContentBlockParam[] = [];
+    if (turn.text.trim()) blocks.push({ type: 'text', text: turn.text });
+    for (const call of turn.toolCalls) {
+      blocks.push({
+        type: 'tool_use',
+        id: call.id,
+        name: call.name,
+        input: call.input as Record<string, unknown>,
+      });
+    }
+    // 模型既没出文本也没调工具时 blocks 为空，空 content 会被 API 拒绝。
+    // 占位符让后续的"你还没调用 submit_analysis"提示能真正送达，而不是整轮报错。
+    if (blocks.length === 0) blocks.push({ type: 'text', text: '(本轮无输出)' });
+    return { role: 'assistant', content: blocks };
+  });
+}
+
 class AnthropicBackend implements LlmBackend {
   readonly id = 'anthropic' as const;
   readonly label = 'Claude';
@@ -89,38 +132,6 @@ class AnthropicBackend implements LlmBackend {
 
   constructor(apiKey: string) {
     this.client = new Anthropic({ apiKey });
-  }
-
-  private toMessages(turns: AgentTurn[]): Anthropic.MessageParam[] {
-    return turns.map((turn): Anthropic.MessageParam => {
-      if (turn.role === 'user') {
-        return { role: 'user', content: turn.text };
-      }
-      if (turn.role === 'tool_results') {
-        // 同一轮的所有 tool_result 必须打包进一条 user 消息，
-        // 拆开会让模型逐渐放弃并行调用工具
-        return {
-          role: 'user',
-          content: turn.results.map((r): Anthropic.ToolResultBlockParam => ({
-            type: 'tool_result',
-            tool_use_id: r.id,
-            content: r.text,
-            ...(r.isError ? { is_error: true } : {}),
-          })),
-        };
-      }
-      const blocks: Anthropic.ContentBlockParam[] = [];
-      if (turn.text.trim()) blocks.push({ type: 'text', text: turn.text });
-      for (const call of turn.toolCalls) {
-        blocks.push({
-          type: 'tool_use',
-          id: call.id,
-          name: call.name,
-          input: call.input as Record<string, unknown>,
-        });
-      }
-      return { role: 'assistant', content: blocks };
-    });
   }
 
   async complete(req: CompleteRequest): Promise<CompleteResponse> {
@@ -133,7 +144,7 @@ class AnthropicBackend implements LlmBackend {
         description: t.description,
         input_schema: t.jsonSchema as Anthropic.Tool.InputSchema,
       })),
-      messages: this.toMessages(req.turns),
+      messages: toAnthropicMessages(req.turns),
     });
     const message = await stream.finalMessage();
 
