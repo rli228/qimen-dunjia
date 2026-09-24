@@ -7,6 +7,7 @@ import { useAgentPipeline } from '@/hooks/useAgentPipeline';
 import { NinePalaceGrid } from '@/components/QimenBoard/NinePalaceGrid';
 import { EVENT_TEMPLATES } from '@/lib/qimen/interpretation/data/yongShen';
 import type { EvaluationScores } from '@/lib/agents/types';
+import type { ProviderId } from '@/lib/agents/llm';
 
 const TIER_COLOR: Record<string, string> = {
   '大吉': 'text-qimen-red', '小吉': 'text-qimen-gold', '平': 'text-qimen-text-secondary',
@@ -28,13 +29,15 @@ const TOOL_LABELS: Record<string, string> = {
 };
 
 export function AgentPanel({ bare }: { bare?: boolean }) {
+  const [provider, setProvider] = useState<ProviderId>('anthropic');
   const { token, setToken, isValid } = useApiKey('anthropic');
-  const { state, start, stop, reset } = useAgentPipeline(token);
+  const { state, start, stop, reset } = useAgentPipeline(token, provider);
   const [question, setQuestion] = useState('');
   const [maxRevisions, setMaxRevisions] = useState(1);
 
   const running = state.status === 'running';
   const r = state.result;
+  const ready = provider === 'local' || isValid;
 
   return (
     <div className={bare ? 'space-y-4' : 'rounded-xl border border-qimen-border bg-qimen-surface p-6 space-y-4'}>
@@ -47,22 +50,53 @@ export function AgentPanel({ bare }: { bare?: boolean }) {
         </div>
       )}
 
-      {/* API Key */}
+      {/* 模型来源 */}
       <div>
-        <label className="mb-1.5 block text-xs text-qimen-text-secondary">
-          Anthropic API Key（agent 流水线需要 tool use，暂不支持 Gemini）
-        </label>
+        <label className="mb-1.5 block text-xs text-qimen-text-secondary">模型</label>
         <div className="flex gap-2">
-          <input
-            type="password"
-            value={token}
-            onChange={e => setToken(e.target.value)}
-            placeholder="sk-ant-..."
-            className="flex-1 rounded-lg border border-qimen-border bg-qimen-bg px-3 py-2 text-sm font-mono"
-          />
-          {isValid && <span className="self-center text-xs text-qimen-green">✓</span>}
+          {([
+            ['anthropic', 'Claude', '需 API Key，质量高'],
+            ['local', '本地模型', '免费，需先跑 ollama serve'],
+          ] as const).map(([value, label, hint]) => (
+            <button
+              key={value}
+              onClick={() => setProvider(value)}
+              title={hint}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                provider === value
+                  ? 'bg-qimen-gold text-white'
+                  : 'bg-qimen-bg text-qimen-text-secondary hover:text-qimen-text'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+        <p className="mt-1 text-[10px] text-qimen-text-secondary/60">
+          {provider === 'anthropic'
+            ? 'agent 流水线依赖 tool use，暂不支持 Gemini'
+            : '走本机 Ollama。模型与地址由服务端环境变量 OLLAMA_MODEL / OLLAMA_BASE_URL 决定；小模型解盘质量有限，主要用于验证流程'}
+        </p>
       </div>
+
+      {/* API Key —— 仅 Claude 需要 */}
+      {provider === 'anthropic' && (
+        <div>
+          <label className="mb-1.5 block text-xs text-qimen-text-secondary">
+            Anthropic API Key
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="password"
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              placeholder="sk-ant-..."
+              className="flex-1 rounded-lg border border-qimen-border bg-qimen-bg px-3 py-2 text-sm font-mono"
+            />
+            {isValid && <span className="self-center text-xs text-qimen-green">✓</span>}
+          </div>
+        </div>
+      )}
 
       {/* 问题输入 */}
       <div>
@@ -94,7 +128,7 @@ export function AgentPanel({ bare }: { bare?: boolean }) {
       <div className="flex gap-2">
         <button
           onClick={() => start({ question, maxRevisions })}
-          disabled={!isValid || !question.trim() || running}
+          disabled={!ready || !question.trim() || running}
           className="flex-1 rounded-lg bg-qimen-gold px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {running ? '流水线运行中…' : '启动 Agent 流水线'}
