@@ -1,0 +1,185 @@
+{
+  "_comment": "书载应期断语及其验证结果。每条记录作者用了哪种定应期方法、推出什么、实际何时发生。这是本项目第一份 ground truth —— 吉凶等级几乎无法证伪，而日期可以。caseId 关联 bookCases.json，chartMatches 表示本项目能否重现该案盘面（超神/置闰案不能，方法复现断言对其跳过）。",
+  "_source": {
+    "title": "神奇之门",
+    "author": "张志春"
+  },
+  "entries": [
+    {
+      "id": "t-health-04",
+      "caseId": "szm-health-04",
+      "chartMatches": true,
+      "page": "156",
+      "method": "值使门所临之干",
+      "alsoUses": [
+        "值使门所落宫数"
+      ],
+      "quote": "值使休门落3宫，从现在起，难以超过三天，值使门所临之干为应期，休门临癸，5月26日癸亥，这一天恐怕过不去。",
+      "predicted": {
+        "kind": "干日",
+        "value": "癸",
+        "date": "1996-05-26"
+      },
+      "outcome": "其姨母果然于5月26日凌晨子时去世，即癸亥日壬子时去世",
+      "hit": true
+    },
+    {
+      "id": "t-health-03",
+      "caseId": "szm-health-03",
+      "chartMatches": true,
+      "page": "155",
+      "method": "旬空填实",
+      "alsoUses": [],
+      "quote": "甲午旬中辰、巳空，正好生门在四宫逢空亡…填实之日，生门冲开死门，将乙奇冲出墓地，自然就可以出院了。5月19日丙辰、20日丁巳，最晚5月20日痊愈出院。",
+      "predicted": {
+        "kind": "支日",
+        "value": "辰、巳",
+        "date": "1996-05-20"
+      },
+      "outcome": "正是到5月20日上午，小郑侄子拆线出院了",
+      "hit": true
+    },
+    {
+      "id": "t-lost-03",
+      "caseId": "szm-lost-03",
+      "chartMatches": true,
+      "page": "259",
+      "method": "值使门所落宫数",
+      "alsoUses": [
+        "庚格应期"
+      ],
+      "quote": "时干、甲子戊均在内盘，找到时间比较快，惊门值使落6宫，6天左右可以找到。又日支看庚下之干为应期，今庚申日为阳日，4宫庚下之干为丙，3月30日丙寅日可以找到。",
+      "predicted": {
+        "kind": "宫数",
+        "value": "6",
+        "date": "1996-03-30"
+      },
+      "outcome": "3月30日（丙寅日）上午8点…六千八百元人民币啪一声掉在她的脚面上",
+      "hit": true
+    },
+    {
+      "id": "t-lost-04",
+      "caseId": "szm-lost-04",
+      "chartMatches": true,
+      "page": "261",
+      "method": "冲墓库",
+      "alsoUses": [],
+      "quote": "何时找到？甲午旬中辰、巳空，乙未时，乙临开门冲实4宫，未冲开丑库，文件丁奇当也应见了…下午一点以后一定能够见到。",
+      "predicted": {
+        "kind": "时辰",
+        "value": "乙未时",
+        "date": "1997-07-18 下午"
+      },
+      "outcome": "下午1点28分，司机打来电话说，文件已经找到了",
+      "hit": true,
+      "note": "初标为「旬空冲实」有误：书上的机理是「乙临开门冲实4宫，未冲开丑库」——冲的是墓库而非单纯填实空亡。本项目的旬空冲实推出戌日/亥日，与书上的未时不同源，不应强行对齐。冲墓需墓库判定，已列在 analyzeTiming 的 notImplemented 中。"
+    },
+    {
+      "id": "t-law-01",
+      "caseId": "szm-law-01",
+      "chartMatches": true,
+      "page": "281",
+      "method": "六仪所带地支/天盘干定日",
+      "alsoUses": [
+        "内外盘定远近"
+      ],
+      "quote": "年干乙奇为用神，地盘乙奇在3宫，上临六仪丙与己，丙日或己日可放出，阳遁3宫为内盘，主快，故断己日可放回。",
+      "predicted": {
+        "kind": "干日",
+        "value": "己",
+        "date": "1995-05-08"
+      },
+      "outcome": "其父果于第三天（己亥日）被放回",
+      "hit": true
+    },
+    {
+      "id": "t-marriage-05",
+      "caseId": "szm-marriage-05",
+      "chartMatches": true,
+      "page": "168",
+      "method": "值使门所落宫数",
+      "alsoUses": [
+        "内外盘定远近"
+      ],
+      "quote": "日、时均在内盘，庚+丁又为时格，景门为值使在3宫，快则三十天，慢则三个月左右。",
+      "predicted": {
+        "kind": "宫数",
+        "value": "3",
+        "date": "1997-01 至 1997-03"
+      },
+      "outcome": "一个月后就离了婚，1997年五月同这个青年女子结了婚",
+      "hit": true
+    },
+    {
+      "id": "t-marriage-03",
+      "caseId": "szm-marriage-03",
+      "chartMatches": true,
+      "page": "164",
+      "method": "所临之干定日",
+      "alsoUses": [],
+      "quote": "丁下所临之干为应期，丁下临戊（甲），故3月18日甲寅日离婚。",
+      "predicted": {
+        "kind": "干日",
+        "value": "甲",
+        "date": "1996-03-18"
+      },
+      "outcome": "3月18日我们离了婚（求测者自述，起盘在离婚之后，属回溯验证）",
+      "hit": true
+    },
+    {
+      "id": "t-lost-02",
+      "caseId": "szm-lost-02",
+      "chartMatches": true,
+      "page": "258",
+      "method": "庚格应期",
+      "alsoUses": [
+        "时干生日干之日"
+      ],
+      "quote": "阴干寻庚上，阳干寻庚下…今时干癸为阴干，西南坤宫地盘上之干为壬…故当在本旬壬日内找到，或癸日，时干癸最旺，生日干落宫之日找到。",
+      "predicted": {
+        "kind": "干日",
+        "value": "壬",
+        "date": "1995-06-11"
+      },
+      "outcome": "6月11日（癸酉日）在旧房北屋东间床下的红色木箱里找到",
+      "hit": true,
+      "note": "书上原文「故当在本旬壬日内找到，或癸日」中，壬日出自庚格（阴干寻庚上，庚上之干为壬），癸日出自另一条规则「时干癸最旺，生日干落宫之日」，不属庚格。predicted 只记庚格推出的壬，以免把两种方法的结果混作一条来评判。"
+    },
+    {
+      "id": "t-lost-01",
+      "caseId": "szm-lost-01",
+      "chartMatches": false,
+      "page": "256",
+      "method": "宫数",
+      "alsoUses": [
+        "反吟定快慢"
+      ],
+      "quote": "今八门反吟，反吟主做事速度快…大约3天（震3宫，又三、八木）左右即可找回。",
+      "predicted": {
+        "kind": "宫数",
+        "value": "3",
+        "date": "1994-12-22"
+      },
+      "outcome": "找到时间是第三天即12月22日（壬午日）",
+      "hit": true
+    },
+    {
+      "id": "t-law-02",
+      "caseId": "szm-law-02",
+      "chartMatches": false,
+      "page": "282",
+      "method": "庚格应期",
+      "alsoUses": [
+        "地支相冲"
+      ],
+      "quote": "甲午辛下临之干为戊，子午相冲，必在戊子月放出。",
+      "predicted": {
+        "kind": "月",
+        "value": "戊子月",
+        "date": "1995-12-29"
+      },
+      "outcome": "12月29日即戊子月甲午日，张某向检察院交出两万五千元，被领导保释出来",
+      "hit": true
+    }
+  ]
+}

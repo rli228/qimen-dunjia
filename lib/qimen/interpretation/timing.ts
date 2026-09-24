@@ -85,6 +85,126 @@ export function isInnerPalace(palace: PalaceIndex): boolean {
   return palace <= 5;
 }
 
+
+// ─── 庚格应期 ────────────────────────────────────────────────────────────────
+
+/** 天干阴阳：甲丙戊庚壬为阳，乙丁己辛癸为阴 */
+const YANG_GAN = ['甲', '丙', '戊', '庚', '壬'];
+
+/**
+ * 九星阴阳，由本宫卦象定：乾震坎艮为阳卦，坤巽离兑为阴卦。
+ * 天禽居中宫无卦，不参与。
+ */
+const YANG_STAR: Record<string, boolean> = {
+  '天蓬': true,  // 坎
+  '天冲': true,  // 震
+  '天任': true,  // 艮
+  '天心': true,  // 乾
+  '天芮': false, // 坤
+  '天辅': false, // 巽
+  '天柱': false, // 兑
+  '天英': false, // 离
+};
+
+export interface GengPosition {
+  palace: PalaceIndex;
+  /** 实际读取的宫位。庚落中五宫时寄坤二 */
+  effectivePalace: PalaceIndex;
+  gan: string;
+  lodged: boolean;
+}
+
+/**
+ * 庚上之干与庚下之干。
+ *
+ * 庚上 = 地盘庚所在宫的天盘干；庚下 = 天盘庚所在宫的地盘干。
+ * 庚落中五宫时按寄坤二读 —— 书页 258 的「西南坤宫地盘上之干为壬」即此例：
+ * 该盘地盘庚在中五宫，而作者取坤二宫的天盘干为庚上之干。
+ */
+export function locateGeng(chart: QimenChart): { above: GengPosition | null; below: GengPosition | null } {
+  let above: GengPosition | null = null;
+  let below: GengPosition | null = null;
+
+  for (let i = 1; i <= 9; i++) {
+    const idx = i as PalaceIndex;
+    const p = chart.palaces[idx];
+    if (!above && p.diPanGan === '庚') {
+      const eff = (idx === 5 ? 2 : idx) as PalaceIndex;
+      above = { palace: idx, effectivePalace: eff, gan: chart.palaces[eff].tianPanGan, lodged: idx === 5 };
+    }
+    if (!below && p.tianPanGan === '庚') {
+      const eff = (idx === 5 ? 2 : idx) as PalaceIndex;
+      below = { palace: idx, effectivePalace: eff, gan: chart.palaces[eff].diPanGan, lodged: idx === 5 };
+    }
+  }
+  return { above, below };
+}
+
+/**
+ * 庚格应期。书中对「取上还是取下」给了三种判据，本函数三种都算并各自标注。
+ *
+ * A 按日干阴阳（书页 148）：阴日看庚上之干，阳日看庚下之干
+ * B 按时干阴阳（书页 255，钱物丢失章）：阴干寻庚上，阳干寻庚下
+ * C 按时干所临九星阴阳（书页 148）：临阴星看庚上，临阳星看庚下
+ *
+ * 三者判据不同，可能给出不同答案。全部并列输出而不替用户取舍 ——
+ * 书上也是并列多法互相参照。书中称庚格应期「多用于破案和行人走失」。
+ */
+function gengGeCandidates(chart: QimenChart): TimingCandidate[] {
+  const { above, below } = locateGeng(chart);
+  if (!above && !below) return [];
+
+  const dayGan = chart.siZhu.day.gan;
+  const hourGan = chart.siZhu.hour.gan;
+
+  // 时干所临之星
+  let hourStar: string | null = null;
+  for (let i = 1; i <= 9; i++) {
+    const p = chart.palaces[i as PalaceIndex];
+    if (p.tianPanGan === hourGan || p.diPanGan === hourGan) { hourStar = p.star; break; }
+  }
+
+  const variants: { label: string; pick: 'above' | 'below' | null; basis: string }[] = [
+    {
+      label: '庚格应期·按日干阴阳（书页 148 第 7 条）',
+      pick: YANG_GAN.includes(dayGan) ? 'below' : 'above',
+      basis: `日干${dayGan}为${YANG_GAN.includes(dayGan) ? '阳' : '阴'}干`,
+    },
+    {
+      label: '庚格应期·按时干阴阳（书页 255）',
+      pick: YANG_GAN.includes(hourGan) ? 'below' : 'above',
+      basis: `时干${hourGan}为${YANG_GAN.includes(hourGan) ? '阳' : '阴'}干`,
+    },
+    {
+      label: '庚格应期·按时干所临九星阴阳（书页 148 第 7 条）',
+      pick: hourStar && hourStar in YANG_STAR ? (YANG_STAR[hourStar] ? 'below' : 'above') : null,
+      basis: hourStar
+        ? (hourStar in YANG_STAR
+            ? `时干${hourGan}临${hourStar}，为${YANG_STAR[hourStar] ? '阳' : '阴'}星`
+            : `时干${hourGan}临${hourStar}（居中宫无卦，此法不适用）`)
+        : `时干${hourGan}未在盘中定位`,
+    },
+  ];
+
+  const out: TimingCandidate[] = [];
+  for (const v of variants) {
+    if (!v.pick) continue;
+    const pos = v.pick === 'above' ? above : below;
+    if (!pos) continue;
+    const side = v.pick === 'above' ? '庚上之干' : '庚下之干';
+    const lodgeNote = pos.lodged ? `（庚落中五宫，寄${PALACE_NAMES[pos.effectivePalace - 1]}${pos.effectivePalace}宫读取）` : '';
+    out.push({
+      method: v.label,
+      basis: `${v.basis}；${side}为${pos.gan}${lodgeNote}`,
+      unit: '日',
+      value: `${pos.gan}日`,
+      explanation: `${v.basis}，故取${side}。庚在${PALACE_NAMES[pos.palace - 1]}${pos.palace}宫${lodgeNote}，其${v.pick === 'above' ? '上' : '下'}之干为${pos.gan}，以${pos.gan}日为应期`,
+      priority: '主',
+    });
+  }
+  return out;
+}
+
 // ─── 主函数 ──────────────────────────────────────────────────────────────────
 
 export function analyzeTiming(
@@ -193,6 +313,9 @@ export function analyzeTiming(
     });
   }
 
+  // ── 方法 7：庚格应期 ──
+  candidates.push(...gengGeCandidates(chart));
+
   // ── 方法 13：日支、时支三合六合为应期 ──
   for (const [label, zhi] of [['日支', chart.siZhu.day.zhi], ['时支', chart.siZhu.hour.zhi]] as const) {
     const he = LIU_HE[zhi];
@@ -215,7 +338,6 @@ export function analyzeTiming(
     notImplemented: [
       '第 3 条：星门生克定应期（生逢生日、克逢克日）—— 需先判定用神与星门的生克主次',
       '第 5/6 条：用神长生旺相、死墓绝应期 —— 需十二长生表，本项目尚未引入',
-      '第 7 条：庚格应期 —— 需先判定日之阴阳与时干所临星之阴阳',
       '第 9 条：冲墓为应期 —— 需墓库判定',
       '第 10 条：马星动为应期 —— 马星已在盘面，但「动」的判据书中未细说',
     ],
