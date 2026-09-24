@@ -6,6 +6,7 @@ import { scoreTiming } from '@/lib/qimen/research/timingScore';
 import { OUTCOME_DEFINITIONS } from '@/lib/qimen/research/schema';
 import type { EventRecord, OutcomeRecord } from '@/lib/qimen/research/schema';
 import { EVENT_TEMPLATES } from '@/lib/qimen/interpretation/data/yongShen';
+import { BackupPanel } from './BackupPanel';
 
 /**
  * 结果回访
@@ -101,6 +102,9 @@ export function OutcomePanel() {
           </p>
         )}
       </div>
+
+      {/* 备份 */}
+      <BackupPanel onRestored={reload} />
 
       {/* 待回访 */}
       <div>
