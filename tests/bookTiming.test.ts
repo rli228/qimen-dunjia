@@ -45,7 +45,7 @@ const CHAPTER_TO_EVENT: Record<string, EventTypeKey> = {
 };
 
 /** analyzeTiming 已实现的方法；其余在 notImplemented 中声明 */
-const IMPLEMENTED = new Set(['值使门所临之干', '值使门所落宫数', '时干所落宫数', '旬空填实']);
+const IMPLEMENTED = new Set(['值使门所临之干', '值使门所落宫数', '时干所落宫数', '旬空填实', '庚格应期']);
 
 function timingFor(entry: TimingEntry) {
   const c = CASES.find(x => x.id === entry.caseId);

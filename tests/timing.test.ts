@@ -118,3 +118,61 @@ describe('星门伏吟判为应期迟缓', () => {
     expect(r.distanceBasis.some(b => b.includes('伏吟'))).toBe(true);
   });
 });
+
+// ─── 庚格应期（书页 148 第 7 条 / 书页 255）────────────────────────────────
+
+import { locateGeng } from '../lib/qimen/interpretation/timing';
+
+describe('庚格应期', () => {
+  it('庚上之干取地盘庚所在宫的天盘干，庚下之干取天盘庚所在宫的地盘干', () => {
+    // 钱物丢失·实例三（书页 259）：「今庚申日为阳日，4宫庚下之干为丙」
+    const chart = generateChart({ year: 1996, month: 3, day: 24, hour: 11, minute: 45, method: '拆补法' });
+    const { below } = locateGeng(chart);
+    expect(below).not.toBeNull();
+    expect(below!.palace).toBe(4);      // 书载「4宫」
+    expect(below!.gan).toBe('丙');       // 书载「庚下之干为丙」
+  });
+
+  it('庚落中五宫时按寄坤二读取', () => {
+    // 钱物丢失·实例二（书页 258）：「西南坤宫地盘上之干为壬」
+    // 该盘地盘庚实落中五宫，作者取坤二宫的天盘干
+    const chart = generateChart({ year: 1995, month: 6, day: 7, hour: 18, minute: 0, method: '拆补法' });
+    const { above } = locateGeng(chart);
+    expect(above).not.toBeNull();
+    expect(above!.palace).toBe(5);
+    expect(above!.lodged).toBe(true);
+    expect(above!.effectivePalace).toBe(2);
+    expect(above!.gan).toBe('壬');       // 书载「地盘上之干为壬」
+  });
+
+  it('阳日取庚下、阴日取庚上', () => {
+    // 庚申日为阳日 → 庚下之干丙
+    const yang = generateChart({ year: 1996, month: 3, day: 24, hour: 11, minute: 45, method: '拆补法' });
+    const byDay = analyzeTiming(yang, []).candidates.find(c => c.method.includes('按日干阴阳'))!;
+    expect(yang.siZhu.day.gan).toBe('庚');
+    expect(byDay.value).toBe('丙日');
+
+    // 己巳日为阴日 → 庚上之干壬
+    const yin = generateChart({ year: 1995, month: 6, day: 7, hour: 18, minute: 0, method: '拆补法' });
+    const byDay2 = analyzeTiming(yin, []).candidates.find(c => c.method.includes('按日干阴阳'))!;
+    expect(yin.siZhu.day.gan).toBe('己');
+    expect(byDay2.value).toBe('壬日');
+  });
+
+  it('三种判据并列输出，不替用户取舍', () => {
+    const chart = generateChart({ year: 1996, month: 3, day: 24, hour: 11, minute: 45, method: '拆补法' });
+    const geng = analyzeTiming(chart, []).candidates.filter(c => c.method.includes('庚格应期'));
+    // 按日干、按时干、按时干所临九星 —— 至少前两种总是可算
+    expect(geng.length).toBeGreaterThanOrEqual(2);
+    for (const c of geng) {
+      expect(c.method).toMatch(/书页 (148|255)/);
+      expect(c.basis).toMatch(/庚[上下]之干/);
+    }
+  });
+
+  it('庚格已从未实现清单中移除', () => {
+    const chart = generateChart({ year: 1996, month: 3, day: 24, hour: 11, minute: 45, method: '拆补法' });
+    const r = analyzeTiming(chart, []);
+    expect(r.notImplemented.some(n => n.includes('庚格'))).toBe(false);
+  });
+});
