@@ -19,6 +19,7 @@ const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
 
 const TOOL_LABELS: Record<string, string> = {
   analyze_yongshen: '用神分析引擎',
+  analyze_timing: '应期推算',
   detect_patterns: '格局与克应扫描',
   inspect_palace: '细查宫位',
   analyze_marriage: '婚姻专项分析',
