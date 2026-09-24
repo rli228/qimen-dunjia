@@ -136,7 +136,8 @@ function locateYongShen(chart: QimenChart, role: YongShenRole): YongShenLocation
         break;
       }
     } else if (role.type === 'star') {
-      if (p.star === target) {
+      // 天禽寄宫于天芮所在宫，只比对 star 会让它永远停在中五宫
+      if (p.star === target || p.lodgedStar === target) {
         foundPalace = idx;
         break;
       }

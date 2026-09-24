@@ -39,6 +39,12 @@ export interface Palace {
   diPanGan: SanQiLiuYi;          // 地盘干（三奇六仪）
   tianPanGan: SanQiLiuYi;        // 天盘干（三奇六仪）
   star: StarName;                // 天盘九星
+  /**
+   * 寄宫星。转盘法下中五宫寄坤二宫，天禽星因此随天芮同宫而行 ——
+   * 天芮落哪一宫，天禽就在哪一宫。中五宫本身仍显示天禽（排盘惯例）。
+   * 按星名查找宫位时必须同时比对 star 与 lodgedStar，否则天禽永远只能在中五宫被找到。
+   */
+  lodgedStar?: StarName;
   gate: Exclude<GateName, '中'>; // 人盘八门
   deity: DeityName;              // 神盘八神
   anGan?: TianGan;               // 暗干

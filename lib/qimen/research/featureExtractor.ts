@@ -54,6 +54,7 @@ export function extractSnapshot(chart: QimenChart): ChartSnapshot {
       diPanGan: p.diPanGan,
       tianPanGan: p.tianPanGan,
       star: p.star,
+      lodgedStar: p.lodgedStar,
       gate: p.gate,
       deity: p.deity,
       isEmpty: p.isEmpty,

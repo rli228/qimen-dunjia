@@ -14,9 +14,9 @@ interface NinePalaceGridProps {
 export function NinePalaceGrid({ chart }: NinePalaceGridProps) {
   const [selectedPalace, setSelectedPalace] = useState<PalaceIndex | null>(null);
 
-  // 值符落宫
+  // 值符落宫。值符为天禽时它寄在天芮宫，只比对 star 会找不到
   const zhiFuPalace = Object.entries(chart.palaces).find(
-    ([_, p]) => p.star === chart.zhiFu
+    ([_, p]) => p.star === chart.zhiFu || p.lodgedStar === chart.zhiFu
   )?.[0];
 
   return (

@@ -146,6 +146,8 @@ export interface PalaceSnapshot {
   diPanGan: string;
   tianPanGan: string;
   star: string;
+  /** 寄宫星（天禽随天芮）。v1 快照无此字段，读取时按 undefined 处理 */
+  lodgedStar?: string;
   gate: string;
   deity: string;
   isEmpty: boolean;
