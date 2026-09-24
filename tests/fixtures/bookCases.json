@@ -1,0 +1,322 @@
+{
+  "_comment": "从书上摘录的案例盘面元数据，仅含可机械核对的字段（起盘时间 + 书载四柱/局数/值符值使），不含断语正文。用于把书当作排盘算法的外部验收测试集。stated 中为 null 的字段表示书上未写明；errata 记录书上印错、不可作为期望值的字段。",
+  "_source": {
+    "title": "神奇之门——奇门遁甲大解谜",
+    "author": "张志春",
+    "publisher": "中国商业出版社",
+    "year": 2011,
+    "isbn": "978-7-5044-7253-3"
+  },
+  "cases": [
+    {
+      "id": "szm-marriage-01",
+      "chapter": "恋爱婚姻预测",
+      "label": "实例一：母亲测儿子婚事",
+      "page": "160-161",
+      "datetime": {
+        "year": 1997,
+        "month": 1,
+        "day": 7,
+        "hour": 20,
+        "minute": 40
+      },
+      "stated": {
+        "siZhu": "丙子年辛丑月己酉日甲戌时",
+        "dunType": "阳遁",
+        "juNumber": 2,
+        "xunShou": null,
+        "zhiFu": "天冲",
+        "zhiFuPalace": null,
+        "zhiShi": "伤",
+        "zhiShiPalace": null,
+        "yuan": null
+      },
+      "note": "",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-marriage-02",
+      "chapter": "恋爱婚姻预测",
+      "label": "实例二：母亲测女儿婚事",
+      "page": "162",
+      "datetime": {
+        "year": 1996,
+        "month": 5,
+        "day": 31,
+        "hour": 20,
+        "minute": 30
+      },
+      "stated": {
+        "siZhu": "丙子年癸巳月戊辰日壬戌时",
+        "dunType": "阳遁",
+        "juNumber": 6,
+        "xunShou": "甲寅",
+        "zhiFu": "天芮",
+        "zhiFuPalace": 1,
+        "zhiShi": "死",
+        "zhiShiPalace": 1,
+        "yuan": null
+      },
+      "note": "1996 年夏至前置闰期，疑为按置闰法历书起局（书页 63 讨论了这次置闰争议）",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-marriage-03",
+      "chapter": "恋爱婚姻预测",
+      "label": "实例三：杜新会测男青年离婚",
+      "page": "164",
+      "datetime": {
+        "year": 1996,
+        "month": 3,
+        "day": 27,
+        "hour": 9,
+        "minute": 30
+      },
+      "stated": {
+        "siZhu": "丙子年辛卯月癸亥日丁巳时",
+        "dunType": "阳遁",
+        "juNumber": 6,
+        "xunShou": "甲寅",
+        "zhiFu": "天芮",
+        "zhiFuPalace": 3,
+        "zhiShi": "死",
+        "zhiShiPalace": 2,
+        "yuan": null
+      },
+      "note": "书载死门值使落 5 宫寄 2 宫伏吟，此处记为寄宫后的 2 宫",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-marriage-04",
+      "chapter": "恋爱婚姻预测",
+      "label": "实例四：中年妇女测婚",
+      "page": "165",
+      "datetime": {
+        "year": 1997,
+        "month": 12,
+        "day": 4,
+        "hour": 12,
+        "minute": 40
+      },
+      "stated": {
+        "siZhu": "丁丑年辛亥月庚辰日壬午时",
+        "dunType": "阴遁",
+        "juNumber": 5,
+        "xunShou": "甲戌",
+        "zhiFu": "天辅",
+        "zhiFuPalace": 1,
+        "zhiShi": "杜",
+        "zhiShiPalace": 5,
+        "yuan": null
+      },
+      "note": "",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-marriage-05",
+      "chapter": "恋爱婚姻预测",
+      "label": "实例五：杜新会为第三者测婚",
+      "page": "167",
+      "datetime": {
+        "year": 1996,
+        "month": 12,
+        "day": 29,
+        "hour": 21,
+        "minute": 45
+      },
+      "stated": {
+        "siZhu": "丙子年庚子月庚子日丁亥时",
+        "dunType": "阳遁",
+        "juNumber": 7,
+        "xunShou": "甲申",
+        "zhiFu": "天英",
+        "zhiFuPalace": 4,
+        "zhiShi": "景",
+        "zhiShiPalace": 3,
+        "yuan": null
+      },
+      "note": "",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-marriage-06",
+      "chapter": "恋爱婚姻预测",
+      "label": "实例六：妻子测丈夫外遇",
+      "page": "169",
+      "datetime": {
+        "year": 1998,
+        "month": 4,
+        "day": 22,
+        "hour": 13,
+        "minute": 30
+      },
+      "stated": {
+        "siZhu": "戊寅年丙辰月己亥日辛未时",
+        "dunType": "阳遁",
+        "juNumber": 2,
+        "xunShou": null,
+        "zhiFu": "天芮",
+        "zhiFuPalace": 2,
+        "zhiShi": "死",
+        "zhiShiPalace": 9,
+        "yuan": null
+      },
+      "note": "书载天芮值符落 5 宫寄 2 宫，此处记为寄宫后的 2 宫",
+      "errata": {
+        "field": "xunShou",
+        "printed": "甲午",
+        "correct": "甲子",
+        "reason": "辛未时属甲子旬（甲子…庚午、辛未），甲午旬对应的是己亥日 —— 书上写的是日的旬首而非时的。佐证：书载值符天芮落 2 宫、值使死门落 9 宫，与按甲子旬（六仪戊）推算的结果一致；若真按甲午旬（六仪辛）起，值符不会是天芮。"
+      },
+      "knownBug": null
+    },
+    {
+      "id": "szm-job-01",
+      "chapter": "工作就业预测",
+      "label": "实例一：测毕业分配",
+      "page": "191",
+      "datetime": {
+        "year": 1996,
+        "month": 2,
+        "day": 9,
+        "hour": 18,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "丙子年庚寅月丙子日丁酉时",
+        "dunType": "阳遁",
+        "juNumber": 2,
+        "xunShou": "甲午",
+        "zhiFu": "天禽",
+        "zhiFuPalace": 8,
+        "zhiShi": "死",
+        "zhiShiPalace": 8,
+        "yuan": null
+      },
+      "note": "书载「晚上6点多」，丁酉时（17-19 时），取 18:00",
+      "errata": null,
+      "knownBug": {
+        "summary": "值符为天禽时，天禽未随转盘移动，被留在中 5 宫",
+        "detail": "layoutTianPan 的旋转循环只遍历 ROTATE_ORDER 的八个外宫，天禽本宫为中 5，不在其中，因而从不参与旋转；末尾的 if (zhiFu !== \"天禽\") 又恰好排除了\"值符即天禽\"这一情形。正确模型：天禽寄坤 2，与天芮同宫同行。job-01 需转 4 步，坤 2（下标 5）→ 下标 1 = 艮 8，与书载「落 8 宫」一致；job-04 需转 7 步，坤 2 → 下标 4 = 离 9，与书载「落 9 宫」一致。",
+        "blocker": "修复需先定数据结构：Palace.star 只能放一颗星，而转盘法下天禽与天芮确实同宫。需决定是新增 lodgedStar 字段，还是另设表示法。"
+      }
+    },
+    {
+      "id": "szm-job-02",
+      "chapter": "工作就业预测",
+      "label": "实例二：母测子毕业分配",
+      "page": "193",
+      "datetime": {
+        "year": 1996,
+        "month": 11,
+        "day": 4,
+        "hour": 8,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "丙子年戊戌月乙巳日庚辰时",
+        "dunType": "阴遁",
+        "juNumber": 2,
+        "xunShou": "甲戌",
+        "zhiFu": "天蓬",
+        "zhiFuPalace": 9,
+        "zhiShi": "休",
+        "zhiShiPalace": 4,
+        "yuan": null
+      },
+      "note": "书载值符落 9 宫反吟",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-job-03",
+      "chapter": "工作就业预测",
+      "label": "实例三：张顺良测革职",
+      "page": "194",
+      "datetime": {
+        "year": 1996,
+        "month": 1,
+        "day": 2,
+        "hour": 10,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "乙亥年戊子月戊戌日丁巳时",
+        "dunType": "阳遁",
+        "juNumber": 2,
+        "xunShou": "甲寅",
+        "zhiFu": "天柱",
+        "zhiFuPalace": 8,
+        "zhiShi": "惊",
+        "zhiShiPalace": 1,
+        "yuan": null
+      },
+      "note": "书载阳 2 局 = 小寒上元，但 1996-01-02 尚未交小寒，仍在冬至节气内（冬至三元为 1/7/4，无阳 2 局）。符头甲午为 1995-12-29，早于小寒交节 8 天 —— 此案按超神法用了小寒局，非拆补法。拆补法在冬至内取符头甲午（上元）得阳 1 局，即本项目所算。",
+      "errata": null,
+      "knownBug": null
+    },
+    {
+      "id": "szm-job-04",
+      "chapter": "工作就业预测",
+      "label": "实例四：杜新会自测工作调动",
+      "page": "196",
+      "datetime": {
+        "year": 1997,
+        "month": 4,
+        "day": 15,
+        "hour": 10,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "丁丑年甲辰月丁亥日乙巳时",
+        "dunType": "阳遁",
+        "juNumber": 1,
+        "xunShou": "甲辰",
+        "zhiFu": "天禽",
+        "zhiFuPalace": 9,
+        "zhiShi": "死",
+        "zhiShiPalace": 6,
+        "yuan": null
+      },
+      "note": "",
+      "errata": null,
+      "knownBug": {
+        "summary": "值符为天禽时，天禽未随转盘移动，被留在中 5 宫",
+        "detail": "layoutTianPan 的旋转循环只遍历 ROTATE_ORDER 的八个外宫，天禽本宫为中 5，不在其中，因而从不参与旋转；末尾的 if (zhiFu !== \"天禽\") 又恰好排除了\"值符即天禽\"这一情形。正确模型：天禽寄坤 2，与天芮同宫同行。job-01 需转 4 步，坤 2（下标 5）→ 下标 1 = 艮 8，与书载「落 8 宫」一致；job-04 需转 7 步，坤 2 → 下标 4 = 离 9，与书载「落 9 宫」一致。",
+        "blocker": "修复需先定数据结构：Palace.star 只能放一颗星，而转盘法下天禽与天芮确实同宫。需决定是新增 lodgedStar 字段，还是另设表示法。"
+      }
+    },
+    {
+      "id": "szm-job-05",
+      "chapter": "工作就业预测",
+      "label": "实例五：尚瓴吉测选举",
+      "page": "198",
+      "datetime": {
+        "year": 1996,
+        "month": 10,
+        "day": 27,
+        "hour": 16,
+        "minute": 0
+      },
+      "stated": {
+        "siZhu": "丙子年戊戌月丁酉日戊申时",
+        "dunType": "阴遁",
+        "juNumber": 5,
+        "xunShou": "甲辰",
+        "zhiFu": "天蓬",
+        "zhiFuPalace": 2,
+        "zhiShi": "休",
+        "zhiShiPalace": 6,
+        "yuan": "上元"
+      },
+      "note": "书上明确写出「霜降上元」，是少数直接断言三元的案例；戊申时（15-17 时）",
+      "errata": null,
+      "knownBug": null
+    }
+  ]
+}
