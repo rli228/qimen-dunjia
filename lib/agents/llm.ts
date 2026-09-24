@@ -182,9 +182,28 @@ class AnthropicBackend implements LlmBackend {
  * baseUrl 只从服务端环境变量读，绝不接受请求里传入的地址 —— 否则这就是个 SSRF 洞。
  */
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434';
-export const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? 'qwen3:4b';
+/**
+ * 默认用 instruct 变体而非混合推理的 qwen3:4b。
+ *
+ * 实测同一任务（「用 200 字分析」）：
+ *   qwen3:4b          生成 1155 tok / 33.9s
+ *   qwen3:4b-instruct 生成  175 tok /  6.9s
+ *
+ * `think: false` 并不能真正关掉 Qwen3 的思考链，它会漏进正文，
+ * 而本地模型的延迟几乎全在生成上（~33 tok/s 生成 vs ~600 tok/s 读提示词），
+ * 所以少生成 6 倍 token 就是快 5 倍。instruct 变体没有思考模式，
+ * 工具调用反而更干净 —— 实测直接返回 tool_call 且 content 为空。
+ */
+export const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? 'qwen3:4b-instruct';
 /** 工具返回的盘面文本很长，默认 4096 的上下文完全不够 */
 const OLLAMA_NUM_CTX = Number(process.env.OLLAMA_NUM_CTX ?? 16384);
+
+/**
+ * 生成上限。不设的话模型会一直生成到 EOS —— 实测有一轮吐了 1502 个 token，
+ * 单轮就是 72 秒。设得足够宽松以免截断 submit_analysis 的 JSON，
+ * 但能挡住失控的长篇大论。
+ */
+const OLLAMA_NUM_PREDICT = Number(process.env.OLLAMA_NUM_PREDICT ?? 2048);
 
 interface OllamaToolCall {
   /** 新版 Ollama 会给 id，旧版不给 —— 两种都要能跑 */
@@ -202,6 +221,12 @@ interface OllamaMessage {
 interface OllamaChatResponse {
   message?: { role: string; content?: string; tool_calls?: OllamaToolCall[] };
   error?: string;
+  /** Ollama 返回的计时与 token 数，用于定位延迟 */
+  prompt_eval_count?: number;
+  prompt_eval_duration?: number;
+  eval_count?: number;
+  eval_duration?: number;
+  total_duration?: number;
 }
 
 class OllamaBackend implements LlmBackend {
@@ -221,7 +246,11 @@ class OllamaBackend implements LlmBackend {
           // Qwen3 是混合推理模型，关掉思考链：多轮工具循环里它经常边想边把
           // 工具调用写进正文，反而调不出来，而且慢一倍
           think: false,
-          options: { num_ctx: OLLAMA_NUM_CTX, temperature: 0.6 },
+          options: {
+            num_ctx: OLLAMA_NUM_CTX,
+            num_predict: OLLAMA_NUM_PREDICT,
+            temperature: 0.6,
+          },
           ...body,
         }),
       });
@@ -238,6 +267,21 @@ class OllamaBackend implements LlmBackend {
 
     const json = (await response.json()) as OllamaChatResponse;
     if (json.error) throw new Error(`本地模型错误：${json.error}`);
+
+    // 本地模型的延迟几乎全在生成上（实测 ~33 tok/s 生成 vs ~200 tok/s 读提示词），
+    // 所以定位慢在哪只需要看生成了多少 token。设 QIMEN_LLM_DEBUG=1 打开。
+    if (process.env.QIMEN_LLM_DEBUG === '1') {
+      const s2 = (ns?: number) => ((ns ?? 0) / 1e9).toFixed(1);
+      const rate = (n?: number, ns?: number) =>
+        n && ns ? (n / (ns / 1e9)).toFixed(0) : '—';
+      process.stderr.write(
+        `[llm] 提示词 ${json.prompt_eval_count ?? '—'} tok/${s2(json.prompt_eval_duration)}s ` +
+        `(${rate(json.prompt_eval_count, json.prompt_eval_duration)} tok/s)  ` +
+        `生成 ${json.eval_count ?? '—'} tok/${s2(json.eval_duration)}s ` +
+        `(${rate(json.eval_count, json.eval_duration)} tok/s)  ` +
+        `总 ${s2(json.total_duration)}s\n`
+      );
+    }
     return json;
   }
 

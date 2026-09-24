@@ -6,11 +6,14 @@ import { saveEvent } from '@/lib/qimen/research/eventStore';
 import type { ChartInput } from '@/lib/qimen/types';
 import type { EventTypeKey } from '@/lib/qimen/interpretation/data/yongShen';
 import type { PipelineEvent, PipelineResult, ClassificationResult, PipelineStage } from '@/lib/agents/types';
+import type { ProviderId } from '@/lib/agents/llm';
 import type { QimenChart } from '@/lib/qimen/types';
 
 export interface TraceEntry {
   kind: 'stage' | 'tool' | 'revise' | 'degrade';
   label: string;
+  /** 工具入参。原先入参会被结果摘要覆盖，调用时看到的信息就此丢失 */
+  args?: string;
   detail?: string;
   ok?: boolean;
   ms?: number;
@@ -27,6 +30,17 @@ export interface AgentPipelineState {
   error: string | null;
   /** 本次解盘是否已留档。留档是拿到真实准确率的前提 */
   recorded: boolean;
+}
+
+
+/** 工具入参渲染成人类可读的一行，而不是裸 JSON */
+function formatToolInput(input: unknown): string {
+  if (input === null || input === undefined) return '';
+  if (typeof input !== 'object') return String(input);
+  const entries = Object.entries(input as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '');
+  if (entries.length === 0) return '';
+  return entries.map(([k, v]) => `${k}=${typeof v === 'object' ? JSON.stringify(v) : String(v)}`).join('  ');
 }
 
 const STAGE_LABELS: Record<PipelineStage, string> = {
@@ -47,7 +61,11 @@ const INITIAL: AgentPipelineState = {
  * 注意案例库是从 localStorage 读的：服务端拿不到用户本地积累的案例，
  * 所以随请求一起上传，让分析 agent 的 search_cases 能检索到。
  */
-export function useAgentPipeline(apiKey: string) {
+/**
+ * @param apiKey   Anthropic API Key。provider 为 'local' 时不需要
+ * @param provider 'anthropic' 走 Claude，'local' 走本机 Ollama（模型与地址由服务端环境变量决定）
+ */
+export function useAgentPipeline(apiKey: string, provider: ProviderId = 'anthropic') {
   const [state, setState] = useState<AgentPipelineState>(INITIAL);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -57,7 +75,9 @@ export function useAgentPipeline(apiKey: string) {
     forcedEventType?: EventTypeKey;
     maxRevisions?: number;
   }) => {
-    if (!apiKey || !options.question.trim()) return;
+    // 本地模型不需要密钥
+    if (provider === 'anthropic' && !apiKey) return;
+    if (!options.question.trim()) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -71,7 +91,11 @@ export function useAgentPipeline(apiKey: string) {
     try {
       const response = await fetch('/api/agent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-provider': provider,
+          ...(provider === 'anthropic' ? { 'x-api-key': apiKey } : {}),
+        },
         body: JSON.stringify({
           question: options.question,
           chartInput: options.chartInput,
@@ -130,7 +154,7 @@ export function useAgentPipeline(apiKey: string) {
                 setState(prev => ({ ...prev, classification: event.data }));
                 break;
               case 'tool_call':
-                push({ kind: 'tool', label: event.name, detail: JSON.stringify(event.input) });
+                push({ kind: 'tool', label: event.name, args: formatToolInput(event.input) });
                 break;
               case 'tool_result':
                 setState(prev => {
@@ -182,7 +206,7 @@ export function useAgentPipeline(apiKey: string) {
         error: err instanceof Error ? err.message : '未知错误',
       }));
     }
-  }, [apiKey]);
+  }, [apiKey, provider]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();

@@ -489,3 +489,79 @@ describe('tool_use / tool_result 配对', () => {
     assertToolPairing(toAnthropicMessages(backend.seen[backend.seen.length - 1]));
   });
 });
+
+// ─── 终止工具兜底 ────────────────────────────────────────────────────────────
+
+describe('模型不肯调用终止工具时的兜底', () => {
+  // 小模型常常能把分析写出来，却始终不走工具调用那条路。
+  // 原先的行为是空转到轮次上限后抛异常，整次解盘报废。
+  const forced = {
+    headline: '兜底产出',
+    tier: '平',
+    confidence: '低',
+    reasoning: '……',
+    evidence: [{ element: '开门落乾6宫', role: '主用神', effect: '中性', source: 'rule' }],
+    advice: '……',
+    citedCaseIds: [],
+  };
+
+  function neverSubmitsBackend(script: CompleteResponse[]) {
+    let i = 0;
+    const parseJsonCalls: { system: string; user: string }[] = [];
+    const backend: LlmBackend & { parseJsonCalls: typeof parseJsonCalls } = {
+      id: 'local', label: 'never-submits', model: 'test', parseJsonCalls,
+      async complete() {
+        return script[Math.min(i++, script.length - 1)];
+      },
+      async parseJson<T>(req: { system: string; user: string }): Promise<T> {
+        parseJsonCalls.push({ system: req.system, user: req.user });
+        return forced as unknown as T;
+      },
+    };
+    return backend;
+  }
+
+  it('连续两轮只出文字不调工具，即改用约束解码兜底', async () => {
+    const backend = neverSubmitsBackend([{ text: '我认为此盘吉凶参半…', toolCalls: [] }]);
+    const session = createAnalystSession(backend, ctx, '能找回吗', classification, () => {});
+    const r = await session.run();
+    expect(r.headline).toBe('兜底产出');
+    expect(backend.parseJsonCalls.length).toBe(1);
+  });
+
+  it('兜底时把已取得的工具输出一并交给约束解码，不凭空生成', async () => {
+    const backend = neverSubmitsBackend([
+      { text: '', toolCalls: [call('x1', 'analyze_yongshen')] },
+      { text: '分析如下…', toolCalls: [] },
+    ]);
+    const session = createAnalystSession(backend, ctx, '能找回吗', classification, () => {});
+    await session.run();
+    const prompt = backend.parseJsonCalls[0].user;
+    expect(prompt).toContain('analyze_yongshen');   // 工具输出被带上
+    expect(prompt).toContain('能找回吗');            // 原始问题被带上
+    expect(prompt).toContain('只引用上面工具输出中真实出现的盘面元素');
+  });
+
+  it('正常调用终止工具时不触发兜底', async () => {
+    const backend = neverSubmitsBackend([
+      { text: '', toolCalls: [call('s1', SUBMIT_TOOL_NAME, validSubmit)] },
+    ]);
+    const session = createAnalystSession(backend, ctx, '能找回吗', classification, () => {});
+    const r = await session.run();
+    expect(r.headline).toBe('机遇尚可');
+    expect(backend.parseJsonCalls.length).toBe(0);
+  });
+
+  it('中途恢复调用工具则重置催促计数，不会误触兜底', async () => {
+    const backend = neverSubmitsBackend([
+      { text: '先想想', toolCalls: [] },                                  // 催促 1
+      { text: '', toolCalls: [call('y1', 'detect_patterns')] },           // 恢复，计数归零
+      { text: '再想想', toolCalls: [] },                                  // 催促 1
+      { text: '', toolCalls: [call('y2', SUBMIT_TOOL_NAME, validSubmit)] },
+    ]);
+    const session = createAnalystSession(backend, ctx, '能找回吗', classification, () => {});
+    const r = await session.run();
+    expect(r.headline).toBe('机遇尚可');
+    expect(backend.parseJsonCalls.length).toBe(0);
+  });
+});
