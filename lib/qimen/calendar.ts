@@ -142,17 +142,28 @@ export function getYuanAndJu(input: ChartInput, jieQiInfo: JieQiInfo): {
     : getYuanAndJuChaiBu(input, jieQiInfo);
 }
 
+/** 符头地支 → 三元。甲子/甲午/己卯/己酉=上元，甲寅/甲申/己巳/己亥=中元，甲辰/甲戌/己丑/己未=下元 */
+function getYuanByFuTouZhi(fuTouZhi: string): '上元' | '中元' | '下元' {
+  if (['子', '午', '卯', '酉'].includes(fuTouZhi)) return '上元';
+  if (['寅', '申', '巳', '亥'].includes(fuTouZhi)) return '中元';
+  return '下元';
+}
+
 /**
  * 拆补法定局
  *
  * 核心逻辑：
- * 1. 找到当天所在旬的旬首（甲日），即符头
- * 2. 根据旬首地支分类确定三元：
- *    - 子午卯酉 → 上元
- *    - 寅申巳亥 → 中元
- *    - 辰戌丑未 → 下元
- * 3. "拆"：旬跨节气时，节气前后各用各自节气的局数
- *    "补"：自然由节气归属处理
+ * 1. 找到当天所属的符头 —— 最近的**甲日或己日**（5 天一轮），不是旬首
+ * 2. 根据符头地支分类确定三元：
+ *    - 甲子、甲午、己卯、己酉 → 上元
+ *    - 甲寅、甲申、己巳、己亥 → 中元
+ *    - 甲辰、甲戌、己丑、己未 → 下元
+ * 3. "拆"：一进入节气交时辰就改用该节气的局，上元因此常是残局
+ *    "补"：用完下元后剩余的两三天，回头补上元所缺的天数
+ *
+ * ⚠ 符头 ≠ 旬首。旬首只能是甲日（10 天一轮），符头甲己皆可（5 天一轮）。
+ *   混为一谈会让每个元被拉长成 10 天，导致一半日期的元判定错误。
+ *   依据：张志春《神奇之门》中编第二章第六节（书页 62、65）。
  */
 function getYuanAndJuChaiBu(input: ChartInput, jieQiInfo: JieQiInfo): {
   yuan: '上元' | '中元' | '下元';
@@ -169,25 +180,10 @@ function getYuanAndJuChaiBu(input: ChartInput, jieQiInfo: JieQiInfo): {
   const ganIndex = getGanIndex(dayGan);
   const zhiIndex = getZhiIndex(dayZhi);
 
-  // 旬首地支：从当天回退 ganIndex 天到甲日
-  const xunShouZhiIndex = ((zhiIndex - ganIndex) % 12 + 12) % 12;
-  const xunShouZhi = DI_ZHI[xunShouZhiIndex];
+  // 符头地支：回退到最近的甲日或己日。甲=0 己=5，故 ganIndex % 5 即为回退天数
+  const fuTouZhi = DI_ZHI[((zhiIndex - (ganIndex % 5)) % 12 + 12) % 12];
 
-  // 根据旬首地支确定三元
-  const SHANG_YUAN_ZHI = ['子', '午', '卯', '酉'];
-  const ZHONG_YUAN_ZHI = ['寅', '申', '巳', '亥'];
-  // 辰戌丑未 → 下元
-
-  let yuan: '上元' | '中元' | '下元';
-  if (SHANG_YUAN_ZHI.includes(xunShouZhi)) {
-    yuan = '上元';
-  } else if (ZHONG_YUAN_ZHI.includes(xunShouZhi)) {
-    yuan = '中元';
-  } else {
-    yuan = '下元';
-  }
-
-  return lookupJu(jieQiInfo.current, yuan);
+  return lookupJu(jieQiInfo.current, getYuanByFuTouZhi(fuTouZhi));
 }
 
 /**
