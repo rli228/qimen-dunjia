@@ -12,6 +12,8 @@ import type { QimenChart } from '@/lib/qimen/types';
 export interface TraceEntry {
   kind: 'stage' | 'tool' | 'revise' | 'degrade';
   label: string;
+  /** 工具入参。原先入参会被结果摘要覆盖，调用时看到的信息就此丢失 */
+  args?: string;
   detail?: string;
   ok?: boolean;
   ms?: number;
@@ -28,6 +30,17 @@ export interface AgentPipelineState {
   error: string | null;
   /** 本次解盘是否已留档。留档是拿到真实准确率的前提 */
   recorded: boolean;
+}
+
+
+/** 工具入参渲染成人类可读的一行，而不是裸 JSON */
+function formatToolInput(input: unknown): string {
+  if (input === null || input === undefined) return '';
+  if (typeof input !== 'object') return String(input);
+  const entries = Object.entries(input as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '');
+  if (entries.length === 0) return '';
+  return entries.map(([k, v]) => `${k}=${typeof v === 'object' ? JSON.stringify(v) : String(v)}`).join('  ');
 }
 
 const STAGE_LABELS: Record<PipelineStage, string> = {
@@ -141,7 +154,7 @@ export function useAgentPipeline(apiKey: string, provider: ProviderId = 'anthrop
                 setState(prev => ({ ...prev, classification: event.data }));
                 break;
               case 'tool_call':
-                push({ kind: 'tool', label: event.name, detail: JSON.stringify(event.input) });
+                push({ kind: 'tool', label: event.name, args: formatToolInput(event.input) });
                 break;
               case 'tool_result':
                 setState(prev => {

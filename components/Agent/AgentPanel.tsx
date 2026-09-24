@@ -163,14 +163,15 @@ export function AgentPanel({ bare }: { bare?: boolean }) {
                 )}
                 {t.kind === 'tool' && (
                   <span className="ml-4 flex items-start gap-1.5">
-                    <span className={t.done ? (t.ok ? 'text-qimen-green' : 'text-qimen-red') : 'animate-pulse text-qimen-text-secondary'}>
+                    <span className={`shrink-0 ${t.done ? (t.ok ? 'text-qimen-green' : 'text-qimen-red') : 'animate-pulse text-qimen-text-secondary'}`}>
                       {t.done ? (t.ok ? '✓' : '✗') : '●'}
                     </span>
-                    <span className="flex-1">
+                    <span className="min-w-0 flex-1">
                       <span className="text-qimen-text">{TOOL_LABELS[t.label] ?? t.label}</span>
-                      {t.ms !== undefined && <span className="ml-1 text-qimen-text-secondary/60">{t.ms}ms</span>}
+                      {t.args && <span className="ml-1.5 text-qimen-text-secondary/70">{t.args}</span>}
+                      {t.ms !== undefined && <span className="ml-1.5 text-qimen-text-secondary/50">{t.ms}ms</span>}
                       {t.detail && (
-                        <span className="block truncate text-qimen-text-secondary/70">{t.detail}</span>
+                        <span className="mt-0.5 block break-words text-qimen-text-secondary/70">{t.detail}</span>
                       )}
                     </span>
                   </span>

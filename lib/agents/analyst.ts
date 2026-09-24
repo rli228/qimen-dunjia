@@ -23,6 +23,8 @@ import type {
 } from './types';
 
 const MAX_ITERATIONS = 12;
+/** 连续多少轮不调用终止工具后改用约束解码兜底 */
+const MAX_NUDGES = 2;
 
 function buildSystemPrompt(): string {
   return `你是一位精通奇门遁甲的分析师，在一个多 agent 系统中担任「分析」环节。
@@ -83,6 +85,29 @@ function buildInitialMessage(
   ].filter(Boolean).join('\n');
 }
 
+
+/**
+ * 把工具输出压成一行可读摘要，供执行轨迹展示。
+ *
+ * 直接取前三行用 " / " 拼接会产生一串噪音：【标题】与工具名重复、空行留下悬空分隔符、
+ * 缩进项目符号和全角空格原样混进来、末尾按字数硬切在句子中间。
+ */
+function summarizeToolOutput(text: string): string {
+  const MAX = 90;
+  const lines = text
+    .split('\n')
+    .map(l => l.replace(/[\u3000\s]+/g, ' ').trim())
+    .filter(l => l.length > 0)
+    // 首行的【…】标题与轨迹里已显示的工具名重复
+    .filter(l => !/^【.*】$/.test(l))
+    .map(l => l.replace(/^[·\-•]\s*/, ''));
+
+  if (lines.length === 0) return '（无输出）';
+
+  const first = lines[0].replace(/^【[^】]*】\s*/, '');
+  return first.length > MAX ? first.slice(0, MAX) + '…' : first;
+}
+
 // ─── 会话 ────────────────────────────────────────────────────────────────────
 
 export interface AnalystSession {
@@ -114,7 +139,35 @@ export function createAnalystSession(
   ];
   const toolCalls: ToolCallLog[] = [];
 
+  /**
+   * 约束解码兜底：把已有对话交给 parseJson，按 submit_analysis 的 schema 强制产出。
+   * 走到这里说明模型不肯调用终止工具 —— 内容它写得出来，只是不走工具那条路。
+   */
+  async function forceSubmit(lastText: string): Promise<AnalysisResult> {
+    const transcript = turns
+      .filter((t): t is Extract<AgentTurn, { role: 'tool_results' }> => t.role === 'tool_results')
+      .flatMap(t => t.results.map(r => `【${r.name}】\n${r.text}`))
+      .join('\n\n');
+
+    return await backend.parseJson({
+      system: buildSystemPrompt(),
+      user: [
+        '以下是本次分析已经取得的全部工具输出：',
+        transcript || '（无）',
+        '',
+        lastText.trim() ? `你此前写下的分析草稿：\n${lastText.trim()}` : '',
+        '',
+        `问题：${question}　事类：${ctx.eventType}`,
+        '',
+        '请据此直接输出最终分析结果。只引用上面工具输出中真实出现的盘面元素。',
+      ].filter(Boolean).join('\n'),
+      schema: submitAnalysisSchema,
+      maxTokens: 4000,
+    });
+  }
+
   async function run(feedback?: { issues: EvaluationIssue[]; round: number }): Promise<AnalysisResult> {
+    let nudges = 0;
     if (feedback) {
       turns.push({
         role: 'user',
@@ -138,14 +191,22 @@ export function createAnalystSession(
 
       turns.push({ role: 'assistant', text: response.text, toolCalls: response.toolCalls });
 
-      // 没调工具就结束了 —— 模型试图用文字作答，把它拽回来
+      // 没调工具就结束了 —— 模型试图用文字作答
       if (response.toolCalls.length === 0) {
+        nudges++;
+        // 反复催促无效时改用约束解码兜底。小模型常常能把分析写出来、
+        // 却始终不肯走工具调用那条路；此时按 schema 强制解码必然得到合法 JSON，
+        // 比继续空转到轮次上限后整轮报废要好。
+        if (nudges >= MAX_NUDGES) {
+          return await forceSubmit(response.text);
+        }
         turns.push({
           role: 'user',
           text: `你还没有调用 ${SUBMIT_TOOL_NAME}。请立刻调用它提交结构化的分析结果，不要用普通文字回答。`,
         });
         continue;
       }
+      nudges = 0;
 
       // 本轮**每一个** tool_use 都必须得到一条 tool_result，交卷那次也不例外。
       // 漏掉任何一条，下一次请求就会被 Anthropic 以 400 拒绝
@@ -192,7 +253,7 @@ export function createAnalystSession(
         emit({
           type: 'tool_result',
           name: call.name,
-          summary: outcome.text.split('\n').slice(0, 3).join(' / ').slice(0, 160),
+          summary: summarizeToolOutput(outcome.text),
           ok: outcome.ok,
           ms,
         });
@@ -206,7 +267,8 @@ export function createAnalystSession(
       if (submitted) return submitted;
     }
 
-    throw new Error(`分析 agent 在 ${MAX_ITERATIONS} 轮内没有完成提交`);
+    // 轮次用尽同样兜底，而不是让整次解盘报废
+    return await forceSubmit('');
   }
 
   return { run, toolCalls };
