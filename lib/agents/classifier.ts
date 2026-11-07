@@ -25,6 +25,7 @@ const classificationSchema = z.object({
     counterparty: z.string().nullable().describe('对方/客体，如"对方公司"、"客队阿根廷"'),
     timeframe: z.string().nullable().describe('时间范围，如"这个月"、"下周日比赛"'),
     quantitative: z.string().nullable().describe('如果在问具体数量（几块金牌、多少钱），写明问的是什么数量；否则 null'),
+    castTime: z.string().nullable().describe('问题指向的具体时刻，按"当前时间"换算成绝对时间，格式 YYYY-MM-DD HH:mm；只说了日期没说钟点则用 12:00；没有具体时间则 null'),
   }),
   needsClarification: z.boolean().describe('问题含混到任何事类都不贴切时为 true'),
   clarifyingQuestion: z.string().nullable().describe('needsClarification 为 true 时给出要反问用户的一句话'),
@@ -57,10 +58,13 @@ ${catalog}
 export async function classify(
   backend: LlmBackend,
   question: string,
+  now: Date = new Date(),
 ): Promise<ClassificationResult> {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const nowText = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())} 星期${'日一二三四五六'[now.getDay()]}`;
   const parsed = await backend.parseJson({
     system: buildSystemPrompt(),
-    user: `用户问题：${question}`,
+    user: `当前时间：${nowText}\n用户问题：${question}`,
     schema: classificationSchema,
     maxTokens: 2000,
   });
@@ -75,6 +79,7 @@ export async function classify(
       counterparty: parsed.entities.counterparty ?? undefined,
       timeframe: parsed.entities.timeframe ?? undefined,
       quantitative: parsed.entities.quantitative ?? undefined,
+      castTime: parsed.entities.castTime ?? undefined,
     },
     needsClarification: parsed.needsClarification,
     clarifyingQuestion: parsed.clarifyingQuestion,

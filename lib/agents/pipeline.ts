@@ -27,8 +27,17 @@ import type {
 
 const SEED_CASES = seedCasesRaw as unknown as CaseStudy[];
 
-function nowChartInput(): ChartInput {
-  const now = new Date();
+/** 解析分类器给出的 "YYYY-MM-DD HH:mm"；LLM 输出不可信，格式或日期非法就返回 null 退回当前时间 */
+export function parseCastTime(text: string | undefined): ChartInput | null {
+  const m = text?.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const [year, month, day, hour, minute] = m.slice(1).map(Number);
+  const d = new Date(year, month - 1, day, hour, minute);
+  if (d.getMonth() !== month - 1 || d.getDate() !== day || hour > 23 || minute > 59) return null;
+  return { year, month, day, hour, minute, method: '拆补法' };
+}
+
+function nowChartInput(now = new Date()): ChartInput {
   return {
     year: now.getFullYear(),
     month: now.getMonth() + 1,
@@ -190,7 +199,8 @@ export async function runPipeline(
 
   // ── Agent 1：分类 ──
   emit({ type: 'stage', stage: 'classify', status: 'start' });
-  const classification = await classify(backend, input.question);
+  const now = new Date();
+  const classification = await classify(backend, input.question, now);
   if (input.forcedEventType) {
     classification.eventType = input.forcedEventType;
     classification.reasoning = `（用户手动指定事类）${classification.reasoning}`;
@@ -201,7 +211,10 @@ export async function runPipeline(
 
   // ── 排盘（确定性，不经过 LLM）──
   emit({ type: 'stage', stage: 'cast', status: 'start' });
-  const chart = generateChart(input.chartInput ?? nowChartInput());
+  // 优先级：手动指定 > 问题里提到的时刻 > 当前时间
+  const chart = generateChart(
+    input.chartInput ?? parseCastTime(classification.entities.castTime) ?? nowChartInput(now),
+  );
   emit({ type: 'chart', chart });
   emit({ type: 'stage', stage: 'cast', status: 'done' });
 

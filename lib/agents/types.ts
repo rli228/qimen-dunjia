@@ -40,6 +40,8 @@ export interface ExtractedEntities {
   timeframe?: string;
   /** 是否在问具体数量（如"能拿几块金牌"）——触发河图数定量分析 */
   quantitative?: string;
+  /** 问题指向的绝对时刻 "YYYY-MM-DD HH:mm"（如"明天上午10点面试"），有则按此起盘 */
+  castTime?: string;
 }
 
 export interface ClassificationResult {
