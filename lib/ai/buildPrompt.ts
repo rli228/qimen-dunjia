@@ -7,6 +7,7 @@
 import type { QimenChart, Pattern, GanInteraction } from '@/lib/qimen/types';
 import type { InterpretationResult } from '@/lib/qimen/interpretation/interpreter';
 import { PALACE_NAMES, PALACE_WUXING } from '@/lib/qimen/constants';
+import { JIEQI_WUXING } from '@/lib/qimen/interpretation/data/gateWuxing';
 import type { PalaceIndex } from '@/lib/qimen/constants';
 
 export type EventType = '求财' | '事业' | '婚姻' | '出行' | '健康' | '综合';
@@ -156,6 +157,26 @@ export function buildUserMessage(
       lines.push(`- ${gi.name}（${gi.fortune}）：${gi.meaning}`);
     }
     lines.push('</gan_interactions>');
+    lines.push('');
+  }
+
+  if (interpretation.gateVitality.length > 0) {
+    lines.push(`<gate_vitality month_wuxing="${JIEQI_WUXING[chart.jieQi]}">`);
+    for (const v of interpretation.gateVitality) {
+      lines.push(`- ${v.gate}门（${PALACE_NAMES[v.palace - 1]}${v.palace}宫）：${v.vitality}`);
+    }
+    lines.push('</gate_vitality>');
+    lines.push('');
+  }
+
+  // 门宫生克：只列门迫/宫制等非平的
+  const gatePalace = interpretation.gatePalace.filter(g => g.fortune !== '平');
+  if (gatePalace.length > 0) {
+    lines.push('<gate_palace>');
+    for (const g of gatePalace) {
+      lines.push(`- ${g.gate}门加${PALACE_NAMES[g.palace - 1]}${g.palace}宫：${g.relation}（${g.fortune}）${g.meaning}`);
+    }
+    lines.push('</gate_palace>');
     lines.push('');
   }
 
