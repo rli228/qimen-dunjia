@@ -102,7 +102,7 @@ export const detectPatternsTool = defineTool({
     }
 
     lines.push('');
-    lines.push('【八门旺衰】（节气五行：' + (JIEQI_WUXING[ctx.chart.jieQi] ?? '?') + '）');
+    lines.push('【八门旺衰】（月令五行：' + (JIEQI_WUXING[ctx.chart.jieQi] ?? '?') + '）');
     for (const gv of r.gateVitality) {
       lines.push(`- ${gv.gate}门@${PALACE_NAMES[gv.palace - 1]}${gv.palace}宫：${gv.vitality}`);
     }
